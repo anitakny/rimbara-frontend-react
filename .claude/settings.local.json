@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(netstat -ano)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(taskkill /PID 25404 /F)",
+      "Bash(cmd /c \"taskkill /PID 25404 /F\")"
+    ]
+  }
+}

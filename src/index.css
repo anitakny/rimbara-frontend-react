@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #F5EFE3;
+    color: #1A1814;
+    font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Fraunces', 'Playfair Display', Georgia, serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-forest text-bone px-6 py-3 rounded-lg font-sans font-medium text-sm tracking-wide
+           transition-all duration-[240ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+           hover:bg-moss hover:shadow-warm active:scale-[0.98]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent text-forest border border-forest/60 px-6 py-3 rounded-lg
+           font-sans font-medium text-sm tracking-wide
+           transition-all duration-[240ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+           hover:bg-bone hover:border-forest active:scale-[0.98]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-forest font-sans font-medium text-sm
+           transition-all duration-[240ms]
+           hover:underline underline-offset-4
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest;
+  }
+
+  .card {
+    @apply bg-bone rounded-card shadow-subtle border border-sand/60
+           transition-all duration-[240ms] ease-[cubic-bezier(0.4,0,0.2,1)];
+  }
+
+  .card:hover {
+    @apply shadow-elevated -translate-y-0.5;
+  }
+
+  .section-divider {
+    @apply flex items-center gap-4 my-12;
+  }
+
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    @apply flex-1 h-px bg-sand;
+  }
+
+  .tag {
+    @apply bg-sand text-ink text-caption uppercase tracking-widest px-3 py-1 rounded-chip font-sans font-medium;
+  }
+
+  .corner-accent {
+    @apply relative;
+  }
+
+  .corner-accent::before {
+    content: '';
+    @apply absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-clay/40 rounded-tl-sm;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .font-tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
