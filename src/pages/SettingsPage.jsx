@@ -29,12 +29,12 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          {/* Two-column layout */}
-          <div className="flex items-start gap-8">
+          {/* Layout — stacked on mobile, side-by-side on desktop */}
+          <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-8">
 
-            {/* Left — sidebar nav */}
-            <aside className="w-56 flex-shrink-0 sticky top-24">
-              <nav className="flex flex-col gap-1">
+            {/* Nav — horizontal scroll on mobile, vertical sidebar on desktop */}
+            <aside className="w-full md:w-56 md:flex-shrink-0 md:sticky md:top-24">
+              <nav className="flex flex-row md:flex-col gap-1 overflow-x-auto pb-1 md:pb-0">
                 {sections.map((s) => {
                   const isActive = active === s.key
                   return (
@@ -42,22 +42,22 @@ export default function SettingsPage() {
                       key={s.key}
                       type="button"
                       onClick={() => setActive(s.key)}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left
-                        transition-all duration-[240ms] ${
+                      className={`flex-shrink-0 flex items-center justify-between px-4 py-2.5 md:py-3
+                        rounded-lg text-left transition-all duration-[240ms] ${
                           isActive
                             ? 'bg-white border border-sand shadow-subtle text-ink font-medium'
                             : 'text-ash hover:text-ink hover:bg-white/60'
                         }`}
                     >
-                      <span className="font-sans text-sm">{s.label}</span>
-                      {isActive && <ChevronRight size={14} className="text-ash flex-shrink-0" />}
+                      <span className="font-sans text-sm whitespace-nowrap">{s.label}</span>
+                      {isActive && <ChevronRight size={14} className="text-ash flex-shrink-0 hidden md:block ml-4" />}
                     </button>
                   )
                 })}
               </nav>
             </aside>
 
-            {/* Right — content panel */}
+            {/* Content panel */}
             <div className="flex-1 min-w-0">
               {ActiveComponent && <ActiveComponent />}
             </div>
