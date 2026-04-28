@@ -16,8 +16,10 @@ jobs:
           fetch-depth: 0
 
       - name: Push ke fork
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git remote add fork https://anitakny:${{ secrets.SYNC_TOKEN }}@github.com/anitakny/rimbara-frontend-react.git
+          git config user.name "anitakny"
+          git config user.email "anitakny@users.noreply.github.com"
+          git remote add fork https://$SYNC_TOKEN@github.com/anitakny/rimbara-frontend-react.git
           git push fork main --force
