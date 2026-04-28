@@ -4,6 +4,9 @@ import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import ActivatePage from './pages/auth/ActivatePage'
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
+import FeedPage from './pages/FeedPage'
+import ProfilePage from './pages/ProfilePage'
+import SettingsPage from './pages/SettingsPage'
 
 export default function App() {
   return (
@@ -14,6 +17,9 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/activate" element={<ActivatePage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/beranda" element={<FeedPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </BrowserRouter>
   )

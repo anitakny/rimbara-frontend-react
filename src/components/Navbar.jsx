@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { User, LogOut, ChevronDown } from 'lucide-react'
+import { User, Settings, LogOut, ChevronDown } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 
 const navLinks = [
@@ -8,9 +8,9 @@ const navLinks = [
 
 // Placeholder — replace with real user data from auth context
 const mockUser = {
-  name: 'John Doe',
+  name: 'Sari Dewi Putri',
   role: 'Mahasiswa',
-  initials: 'JD',
+  initials: 'SD',
 }
 
 export default function Navbar() {
@@ -34,7 +34,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-bone border-b border-sand shadow-subtle">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-sand shadow-subtle">
       <div className="max-w-content mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-3 items-center h-16">
 
@@ -93,17 +93,27 @@ export default function Navbar() {
               {/* Dropdown */}
               {dropdownOpen && (
                 <div className="absolute top-full right-0 mt-2
-                  w-44 bg-bone rounded-card border border-sand shadow-elevated
+                  w-44 bg-white rounded-card border border-sand shadow-elevated
                   overflow-hidden z-50">
                   <div className="py-1">
                     <Link
-                      to="/profil"
+                      to="/profile"
                       onClick={() => setDropdownOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 font-sans text-sm text-ink
                         hover:bg-sand/50 transition-colors duration-[240ms]"
                     >
                       <User size={15} className="text-ash flex-shrink-0" />
                       Profil
+                    </Link>
+
+                    <Link
+                      to="/settings"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 font-sans text-sm text-ink
+                        hover:bg-sand/50 transition-colors duration-[240ms]"
+                    >
+                      <Settings size={15} className="text-ash flex-shrink-0" />
+                      Pengaturan
                     </Link>
 
                     <div className="h-px bg-sand mx-4 my-1" />
