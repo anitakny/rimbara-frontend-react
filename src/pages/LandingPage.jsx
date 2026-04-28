@@ -1,4 +1,4 @@
-import Navbar from '../components/Navbar'
+import GuestNavbar from '../components/GuestNavbar'
 import Hero from '../components/LandingPage/Hero'
 import AboutSection from '../components/LandingPage/AboutSection'
 import FeaturesSection from '../components/LandingPage/FeaturesSection'
@@ -11,7 +11,7 @@ import Footer from '../components/Footer'
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-bone">
-      <Navbar />
+      <GuestNavbar />
       <main>
         <Hero />
         <AboutSection />
