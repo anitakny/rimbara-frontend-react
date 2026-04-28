@@ -2,33 +2,48 @@ import { useState } from 'react'
 import { Eye, EyeOff, ArrowLeft, Leaf } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-const roles = [
-  { value: 'mahasiswa', label: 'Mahasiswa', desc: 'Peserta program akademik' },
-  { value: 'dosen', label: 'Dosen / Akademisi', desc: 'Pengajar & peneliti' },
-  { value: 'pemuda_adat', label: 'Pemuda Adat', desc: 'Anggota komunitas adat' },
-  { value: 'aktivis', label: 'Aktivis', desc: 'Pegiat lingkungan & advokasi' },
-]
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  )
+}
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [form, setForm] = useState({
-    name: '', email: '', password: '', role: '', institution: '',
+    name: '', email: '', password: '', confirmPassword: '',
   })
   const [loading, setLoading] = useState(false)
 
+  const update = (key, val) => setForm((f) => ({ ...f, [key]: val }))
+
+  const allFilled =
+    form.name.trim() &&
+    form.email.trim() &&
+    form.password &&
+    form.confirmPassword
+
+  const passwordsMatch = form.confirmPassword === '' || form.password === form.confirmPassword
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!allFilled || !passwordsMatch) return
     setLoading(true)
     // TODO: integrate with /api/auth/register/
     setTimeout(() => setLoading(false), 1500)
   }
 
-  const update = (key, val) => setForm((f) => ({ ...f, [key]: val }))
-
   return (
     <div className="min-h-screen bg-bone flex">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-5/12 relative overflow-hidden flex-col justify-between p-12"
+      <div
+        className="hidden lg:flex lg:w-5/12 relative overflow-hidden flex-col justify-between p-12"
         style={{
           background: 'linear-gradient(160deg, #8B4A2B 0%, #B85C3E 50%, #1F3B2D 100%)',
         }}
@@ -46,6 +61,12 @@ export default function RegisterPage() {
           <span className="font-serif font-semibold text-xl text-bone tracking-tight">RIMBAHARI</span>
         </div>
         <div className="relative">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-px w-8 bg-clay/50" />
+            <span className="font-sans text-caption uppercase tracking-widest text-bone/50">
+              Komunitas Kontributor
+            </span>
+          </div>
           <blockquote className="font-accent italic text-h2 text-bone leading-snug mb-5 max-w-xs">
             "Bergabunglah — suaramu adalah bagian dari warisan yang hidup."
           </blockquote>
@@ -58,9 +79,11 @@ export default function RegisterPage() {
 
       {/* Right — form */}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-16 overflow-y-auto">
-        <Link to="/"
+        <Link
+          to="/"
           className="inline-flex items-center gap-2 text-ash hover:text-forest text-sm font-sans
-            transition-colors duration-[240ms] mb-10 w-fit">
+            transition-colors duration-[240ms] mb-10 w-fit"
+        >
           <ArrowLeft size={14} /> Kembali ke Beranda
         </Link>
 
@@ -101,43 +124,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Role selector */}
-            <div className="flex flex-col gap-2">
-              <label className="font-sans text-caption uppercase tracking-widest text-ash font-medium">
-                Peran
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {roles.map((r) => (
-                  <button
-                    key={r.value} type="button"
-                    onClick={() => update('role', r.value)}
-                    className={`text-left px-4 py-3 rounded-lg border transition-all duration-[240ms]
-                      ${form.role === r.value
-                        ? 'border-forest bg-forest/8 text-forest'
-                        : 'border-sand bg-bone text-ash hover:border-forest/30'
-                      }`}
-                  >
-                    <p className="font-sans text-sm font-medium">{r.label}</p>
-                    <p className="font-sans text-caption text-ash/70">{r.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Institution */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-sans text-caption uppercase tracking-widest text-ash font-medium">
-                Institusi / Komunitas
-              </label>
-              <input
-                type="text" value={form.institution} onChange={(e) => update('institution', e.target.value)}
-                placeholder="Nama universitas, komunitas, atau organisasi"
-                className="bg-bone border border-sand rounded-lg px-4 py-3 font-sans text-sm text-ink
-                  placeholder:text-ash/50 outline-none focus:border-forest focus:ring-2 focus:ring-forest/15
-                  transition-all duration-[240ms]"
-              />
-            </div>
-
             {/* Password */}
             <div className="flex flex-col gap-1.5">
               <label className="font-sans text-caption uppercase tracking-widest text-ash font-medium">
@@ -152,16 +138,55 @@ export default function RegisterPage() {
                     placeholder:text-ash/50 outline-none focus:border-forest focus:ring-2 focus:ring-forest/15
                     transition-all duration-[240ms]"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                <button
+                  type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ash hover:text-forest
-                    transition-colors duration-[240ms]">
+                    transition-colors duration-[240ms]"
+                  aria-label="Toggle password visibility"
+                >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            <button type="submit" disabled={loading}
-              className="btn-primary mt-2 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+            {/* Confirm Password */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-sans text-caption uppercase tracking-widest text-ash font-medium">
+                Ulang Kata Sandi
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)}
+                  placeholder="Ulangi kata sandi" required
+                  className={`w-full bg-bone border rounded-lg px-4 py-3 pr-12 font-sans text-sm text-ink
+                    placeholder:text-ash/50 outline-none focus:ring-2
+                    transition-all duration-[240ms] ${
+                      !passwordsMatch
+                        ? 'border-clay focus:border-clay focus:ring-clay/15'
+                        : 'border-sand focus:border-forest focus:ring-forest/15'
+                    }`}
+                />
+                <button
+                  type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ash hover:text-forest
+                    transition-colors duration-[240ms]"
+                  aria-label="Toggle confirm password visibility"
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {!passwordsMatch && (
+                <p className="font-sans text-caption text-clay">Kata sandi tidak cocok.</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={!allFilled || !passwordsMatch || loading}
+              className="btn-primary mt-2 flex items-center justify-center gap-2
+                disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-forest disabled:active:scale-100"
+            >
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-bone/30 border-t-bone rounded-full animate-spin" />
@@ -171,10 +196,29 @@ export default function RegisterPage() {
             </button>
           </form>
 
+          {/* Divider */}
+          <div className="section-divider my-6">
+            <span className="font-sans text-caption text-ash/60 px-2">atau</span>
+          </div>
+
+          {/* Google register */}
+          <button
+            type="button"
+            className="w-full flex items-center justify-center gap-3 bg-bone border border-sand
+              rounded-lg px-4 py-3 font-sans text-sm font-medium text-ink
+              hover:bg-sand/50 hover:border-ash/40
+              transition-all duration-[240ms] active:scale-[0.98]"
+          >
+            <GoogleIcon />
+            Daftar dengan Google
+          </button>
+
           <p className="font-sans text-body text-ash text-center mt-6">
             Sudah punya akun?{' '}
-            <Link to="/login"
-              className="text-forest font-medium underline underline-offset-4 hover:text-clay transition-colors duration-[240ms]">
+            <Link
+              to="/login"
+              className="text-forest font-medium underline underline-offset-4 hover:text-clay transition-colors duration-[240ms]"
+            >
               Masuk di sini
             </Link>
           </p>
