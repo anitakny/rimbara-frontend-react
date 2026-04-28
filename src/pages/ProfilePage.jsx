@@ -66,7 +66,6 @@ const BATIK = `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 
 
 export default function ProfilePage() {
   const role = roleColors[mockProfile.role] ?? roleColors['Aktivis']
-  const firstName = mockProfile.name.split(' ')[0]
 
   return (
     <div className="min-h-screen bg-bone">
@@ -131,7 +130,7 @@ export default function ProfilePage() {
               {/* Heading with italic em accent */}
               <h2 className="font-serif text-h1 font-semibold text-ink leading-tight mb-6">
                 Tentang{' '}
-                <em className="font-accent italic text-clay">{firstName}</em>
+                <em className="font-accent italic text-clay">{mockProfile.name}</em>
               </h2>
 
               {/* Info rows */}
