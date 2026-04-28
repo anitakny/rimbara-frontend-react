@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import ActivatePage from './pages/ActivatePage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import LoginPage from './pages/auth/LoginPage'
+import RegisterPage from './pages/auth/RegisterPage'
+import ActivatePage from './pages/auth/ActivatePage'
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
 
 export default function App() {
   return (
