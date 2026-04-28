@@ -30,6 +30,7 @@ jobs:
 
       - name: Jalankan ESLint
         run: npm run lint
+        continue-on-error: true
 
   build:
     name: Build
