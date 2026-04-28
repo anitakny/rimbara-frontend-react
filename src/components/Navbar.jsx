@@ -3,7 +3,7 @@ import { User, Settings, LogOut, ChevronDown } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 
 const navLinks = [
-  { label: 'Beranda', href: '/beranda' },
+  { label: 'Beranda', href: '/home' },
 ]
 
 // Placeholder — replace with real user data from auth context
@@ -39,7 +39,7 @@ export default function Navbar() {
         <div className="grid grid-cols-3 items-center h-16">
 
           {/* Left — wordmark */}
-          <Link to="/beranda" className="flex items-center gap-3 w-fit">
+          <Link to="/home" className="flex items-center gap-3 w-fit">
             <div className="w-8 h-8 rounded-sm bg-forest flex items-center justify-center flex-shrink-0">
               <span className="text-bone font-serif font-semibold text-sm leading-none">R</span>
             </div>

@@ -17,7 +17,7 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/activate" element={<ActivatePage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/beranda" element={<FeedPage />} />
+        <Route path="/home" element={<FeedPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Routes>
