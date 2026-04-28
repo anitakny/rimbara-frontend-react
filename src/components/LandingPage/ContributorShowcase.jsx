@@ -94,7 +94,7 @@ function ContributorCard({ contributor }) {
       </div>
 
       <p className="font-sans text-caption text-ash/70 border-t border-sand pt-3">
-        Fokus: <em className="font-accent italic text-ash not-italic">{contributor.focus}</em>
+        Fokus: <em className="font-accent italic text-ash">{contributor.focus}</em>
       </p>
     </article>
   )
