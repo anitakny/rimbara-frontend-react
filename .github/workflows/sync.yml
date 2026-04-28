@@ -1,0 +1,21 @@
+name: Sync ke Fork Deployment
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    name: Sync ke anitakny/rimbara-frontend-react
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo asli
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push ke fork
+        run: |
+          git remote add fork https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/anitakny/rimbara-frontend-react.git
+          git push fork main --force
