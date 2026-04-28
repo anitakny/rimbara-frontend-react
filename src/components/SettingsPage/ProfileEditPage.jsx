@@ -22,8 +22,8 @@ const initialForm = {
 
 function FormRow({ label, hint, children }) {
   return (
-    <div className="grid grid-cols-[220px_1fr] gap-8 py-6 border-b border-sand last:border-0">
-      <div className="pt-0.5">
+    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-2 md:gap-8 py-5 md:py-6 border-b border-sand last:border-0">
+      <div className="md:pt-0.5">
         <p className="font-sans text-sm font-medium text-ink">{label}</p>
         {hint && <p className="font-sans text-caption text-ash/70 mt-0.5 leading-snug">{hint}</p>}
       </div>
@@ -53,14 +53,14 @@ export default function ProfileEditPage() {
   return (
     <div className="bg-white rounded-card border border-sand shadow-subtle overflow-hidden">
       {/* Panel header */}
-      <div className="px-8 py-6 border-b border-sand">
+      <div className="px-4 md:px-8 py-5 md:py-6 border-b border-sand">
         <h2 className="font-serif text-h3 font-semibold text-ink">Informasi Personal</h2>
         <p className="font-sans text-caption text-ash mt-0.5">
           Perbarui foto dan informasi profilmu yang akan tampil secara publik.
         </p>
       </div>
 
-      <div className="px-8 py-2">
+      <div className="px-4 md:px-8 py-2">
         {/* Photo */}
         <FormRow label="Foto Profil" hint="Akan ditampilkan di halaman profilmu.">
           <div className="flex items-center gap-5">
@@ -180,7 +180,7 @@ export default function ProfileEditPage() {
       </div>
 
       {/* Footer — save */}
-      <div className="px-8 py-5 border-t border-sand bg-sand/10 flex items-center justify-between">
+      <div className="px-4 md:px-8 py-4 md:py-5 border-t border-sand bg-sand/10 flex items-center justify-between">
         {saved && (
           <p className="font-sans text-caption text-moss">Perubahan berhasil disimpan.</p>
         )}
