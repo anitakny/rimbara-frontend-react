@@ -16,8 +16,8 @@ export default function LandingPage() {
         <Hero />
         <AboutSection />
         <FeaturesSection />
-        <EtalasePreview />
         <MapPreview />
+        <EtalasePreview />
         <ContributorShowcase />
         <LoginCTA />
       </main>

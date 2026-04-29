@@ -1,25 +1,30 @@
 import { useState, useRef, useEffect } from 'react'
-import { User, Settings, LogOut, ChevronDown, Menu, X } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { LogOut, ChevronDown, Menu, X } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { authApi, session } from '../lib/api'
 
 const navLinks = [
   { label: 'Beranda', href: '/home' },
 ]
 
-// Placeholder — replace with real user data from auth context
-const mockUser = {
-  name: 'Sari Dewi Putri',
-  role: 'Mahasiswa',
-  initials: 'SD',
+function getInitials(name) {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0][0].toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
 export default function Navbar() {
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const dropdownRef = useRef(null)
-  const location = useLocation()
 
-  // Close desktop dropdown on outside click
+  const user = session.getUser()
+  const initials = getInitials(user?.full_name)
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -30,16 +35,21 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Lock body scroll when mobile sidebar is open
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setDropdownOpen(false)
     setMenuOpen(false)
-    // TODO: integrate with /api/auth/logout/ and clear JWT
+    const refresh = session.getRefresh()
+    if (refresh) {
+      // Fire-and-forget — clear session regardless of API response
+      authApi.logout(refresh).catch(() => {})
+    }
+    session.clear()
+    navigate('/login', { replace: true })
   }
 
   const closeMenu = () => setMenuOpen(false)
@@ -112,7 +122,7 @@ export default function Navbar() {
                 >
                   <div className="w-8 h-8 rounded-full bg-forest flex items-center justify-center flex-shrink-0">
                     <span className="font-serif font-semibold text-xs text-bone leading-none">
-                      {mockUser.initials}
+                      {initials}
                     </span>
                   </div>
                   <ChevronDown
@@ -125,8 +135,15 @@ export default function Navbar() {
 
                 {dropdownOpen && (
                   <div className="absolute top-full right-0 mt-2
-                    w-44 bg-white rounded-card border border-sand shadow-elevated
+                    w-48 bg-white rounded-card border border-sand shadow-elevated
                     overflow-hidden z-50">
+                    {/* User info header */}
+                    {user?.full_name && (
+                      <div className="px-4 py-3 border-b border-sand">
+                        <p className="font-sans text-sm font-medium text-ink truncate">{user.full_name}</p>
+                        <p className="font-sans text-caption text-ash truncate">{user.email}</p>
+                      </div>
+                    )}
                     <div className="py-1">
                       <Link
                         to="/profile"
@@ -200,7 +217,20 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Row 2 — nav links */}
+          {/* Row 2 — user info */}
+          {user?.full_name && (
+            <div className="px-6 py-4 border-b border-sand flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-forest flex items-center justify-center flex-shrink-0">
+                <span className="font-serif font-semibold text-sm text-bone leading-none">{initials}</span>
+              </div>
+              <div className="min-w-0">
+                <p className="font-sans text-sm font-medium text-ink truncate">{user.full_name}</p>
+                <p className="font-sans text-caption text-ash truncate">{user.email}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Row 3 — nav links */}
           <div className="px-4 py-4 border-b border-sand flex flex-col gap-1">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.href
@@ -221,7 +251,7 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Row 3 — account actions */}
+          {/* Row 4 — account actions */}
           <div className="px-4 py-4 flex flex-col gap-1">
             <Link
               to="/profile"

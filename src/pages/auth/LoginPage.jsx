@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Eye, EyeOff, ArrowLeft, Leaf } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Eye, EyeOff, ArrowLeft, Leaf, AlertCircle, MailCheck } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { authApi, session } from '../../lib/api'
 
 function GoogleIcon() {
   return (
@@ -14,15 +15,32 @@ function GoogleIcon() {
 }
 
 export default function LoginPage() {
+  const navigate = useNavigate()
+
   const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [emailNotVerified, setEmailNotVerified] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    // TODO: integrate with /api/auth/login/
-    setTimeout(() => setLoading(false), 1500)
+    setError('')
+    setEmailNotVerified(false)
+
+    const { ok, status, data } = await authApi.login(form.email, form.password)
+
+    if (ok) {
+      session.save(data.tokens.access, data.tokens.refresh, data.user)
+      navigate(data.user.is_profile_complete ? '/home' : '/activate')
+    } else if (status === 403 && data.email_verified === false) {
+      setEmailNotVerified(true)
+    } else {
+      setError(data.error || 'Terjadi kesalahan. Coba lagi.')
+    }
+
+    setLoading(false)
   }
 
   return (
@@ -91,6 +109,24 @@ export default function LoginPage() {
               Masuk ke akun RIMBAHARI-mu untuk mulai berkontribusi.
             </p>
           </div>
+
+          {/* Email not verified banner */}
+          {emailNotVerified && (
+            <div className="flex items-start gap-3 bg-forest/8 border border-forest/20 rounded-lg px-4 py-3 mb-5">
+              <MailCheck size={16} className="text-forest flex-shrink-0 mt-0.5" />
+              <p className="font-sans text-caption text-forest leading-relaxed">
+                Email Anda belum diverifikasi. Silakan cek inbox atau folder spam Anda.
+              </p>
+            </div>
+          )}
+
+          {/* Error banner */}
+          {error && (
+            <div className="flex items-start gap-3 bg-clay/8 border border-clay/20 rounded-lg px-4 py-3 mb-5">
+              <AlertCircle size={16} className="text-clay flex-shrink-0 mt-0.5" />
+              <p className="font-sans text-caption text-clay leading-relaxed">{error}</p>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">

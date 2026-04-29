@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Eye, EyeOff, ArrowLeft, Leaf } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Eye, EyeOff, ArrowLeft, Leaf, AlertCircle } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { authApi, session } from '../../lib/api'
 
 function GoogleIcon() {
   return (
@@ -13,30 +14,66 @@ function GoogleIcon() {
   )
 }
 
+// Shows the first error message for a field from server-side validation.
+function FieldError({ errors, field }) {
+  const msgs = errors?.[field]
+  if (!msgs?.length) return null
+  return (
+    <p className="font-sans text-caption text-clay mt-1">{msgs[0]}</p>
+  )
+}
+
 export default function RegisterPage() {
+  const navigate = useNavigate()
+
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [form, setForm] = useState({
-    name: '', email: '', password: '', confirmPassword: '',
+    full_name: '', email: '', password: '', password_confirm: '',
   })
   const [loading, setLoading] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [serverError, setServerError] = useState('')
 
-  const update = (key, val) => setForm((f) => ({ ...f, [key]: val }))
+  const update = (key, val) => {
+    setForm((f) => ({ ...f, [key]: val }))
+    // Clear the field's server error as the user retypes
+    if (fieldErrors[key]) setFieldErrors((e) => ({ ...e, [key]: undefined }))
+  }
 
   const allFilled =
-    form.name.trim() &&
+    form.full_name.trim() &&
     form.email.trim() &&
     form.password &&
-    form.confirmPassword
+    form.password_confirm
 
-  const passwordsMatch = form.confirmPassword === '' || form.password === form.confirmPassword
+  const passwordsMatch = form.password_confirm === '' || form.password === form.password_confirm
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!allFilled || !passwordsMatch) return
+
     setLoading(true)
-    // TODO: integrate with /api/auth/register/
-    setTimeout(() => setLoading(false), 1500)
+    setFieldErrors({})
+    setServerError('')
+
+    const { ok, status, data } = await authApi.register(
+      form.full_name,
+      form.email,
+      form.password,
+      form.password_confirm,
+    )
+
+    if (ok) {
+      session.save(data.tokens.access, data.tokens.refresh, data.user)
+      navigate('/activate')
+    } else if (status === 400 && data.errors) {
+      setFieldErrors(data.errors)
+    } else {
+      setServerError(data.error || 'Terjadi kesalahan. Coba lagi.')
+    }
+
+    setLoading(false)
   }
 
   return (
@@ -95,19 +132,35 @@ export default function RegisterPage() {
             </p>
           </div>
 
+          {/* Generic server error banner */}
+          {serverError && (
+            <div className="flex items-start gap-3 bg-clay/8 border border-clay/20 rounded-lg px-4 py-3 mb-5">
+              <AlertCircle size={16} className="text-clay flex-shrink-0 mt-0.5" />
+              <p className="font-sans text-caption text-clay leading-relaxed">{serverError}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            {/* Name */}
+            {/* Full name */}
             <div className="flex flex-col gap-1.5">
               <label className="font-sans text-caption uppercase tracking-widest text-ash font-medium">
                 Nama Lengkap
               </label>
               <input
-                type="text" value={form.name} onChange={(e) => update('name', e.target.value)}
-                placeholder="Nama lengkap Anda" required
-                className="bg-bone border border-sand rounded-lg px-4 py-3 font-sans text-sm text-ink
-                  placeholder:text-ash/50 outline-none focus:border-forest focus:ring-2 focus:ring-forest/15
-                  transition-all duration-[240ms]"
+                type="text"
+                value={form.full_name}
+                onChange={(e) => update('full_name', e.target.value)}
+                placeholder="Nama lengkap Anda"
+                required
+                className={`bg-bone border rounded-lg px-4 py-3 font-sans text-sm text-ink
+                  placeholder:text-ash/50 outline-none focus:ring-2
+                  transition-all duration-[240ms] ${
+                    fieldErrors.full_name
+                      ? 'border-clay focus:border-clay focus:ring-clay/15'
+                      : 'border-sand focus:border-forest focus:ring-forest/15'
+                  }`}
               />
+              <FieldError errors={fieldErrors} field="full_name" />
             </div>
 
             {/* Email */}
@@ -116,12 +169,20 @@ export default function RegisterPage() {
                 Surel
               </label>
               <input
-                type="email" value={form.email} onChange={(e) => update('email', e.target.value)}
-                placeholder="nama@institusi.ac.id" required
-                className="bg-bone border border-sand rounded-lg px-4 py-3 font-sans text-sm text-ink
-                  placeholder:text-ash/50 outline-none focus:border-forest focus:ring-2 focus:ring-forest/15
-                  transition-all duration-[240ms]"
+                type="email"
+                value={form.email}
+                onChange={(e) => update('email', e.target.value)}
+                placeholder="nama@institusi.ac.id"
+                required
+                className={`bg-bone border rounded-lg px-4 py-3 font-sans text-sm text-ink
+                  placeholder:text-ash/50 outline-none focus:ring-2
+                  transition-all duration-[240ms] ${
+                    fieldErrors.email
+                      ? 'border-clay focus:border-clay focus:ring-clay/15'
+                      : 'border-sand focus:border-forest focus:ring-forest/15'
+                  }`}
               />
+              <FieldError errors={fieldErrors} field="email" />
             </div>
 
             {/* Password */}
@@ -132,14 +193,22 @@ export default function RegisterPage() {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  value={form.password} onChange={(e) => update('password', e.target.value)}
-                  placeholder="Minimal 8 karakter" required minLength={8}
-                  className="w-full bg-bone border border-sand rounded-lg px-4 py-3 pr-12 font-sans text-sm text-ink
-                    placeholder:text-ash/50 outline-none focus:border-forest focus:ring-2 focus:ring-forest/15
-                    transition-all duration-[240ms]"
+                  value={form.password}
+                  onChange={(e) => update('password', e.target.value)}
+                  placeholder="Minimal 8 karakter"
+                  required
+                  minLength={8}
+                  className={`w-full bg-bone border rounded-lg px-4 py-3 pr-12 font-sans text-sm text-ink
+                    placeholder:text-ash/50 outline-none focus:ring-2
+                    transition-all duration-[240ms] ${
+                      fieldErrors.password
+                        ? 'border-clay focus:border-clay focus:ring-clay/15'
+                        : 'border-sand focus:border-forest focus:ring-forest/15'
+                    }`}
                 />
                 <button
-                  type="button" onClick={() => setShowPassword(!showPassword)}
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ash hover:text-forest
                     transition-colors duration-[240ms]"
                   aria-label="Toggle password visibility"
@@ -147,6 +216,7 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              <FieldError errors={fieldErrors} field="password" />
             </div>
 
             {/* Confirm Password */}
@@ -157,18 +227,21 @@ export default function RegisterPage() {
               <div className="relative">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)}
-                  placeholder="Ulangi kata sandi" required
+                  value={form.password_confirm}
+                  onChange={(e) => update('password_confirm', e.target.value)}
+                  placeholder="Ulangi kata sandi"
+                  required
                   className={`w-full bg-bone border rounded-lg px-4 py-3 pr-12 font-sans text-sm text-ink
                     placeholder:text-ash/50 outline-none focus:ring-2
                     transition-all duration-[240ms] ${
-                      !passwordsMatch
+                      !passwordsMatch || fieldErrors.password_confirm
                         ? 'border-clay focus:border-clay focus:ring-clay/15'
                         : 'border-sand focus:border-forest focus:ring-forest/15'
                     }`}
                 />
                 <button
-                  type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ash hover:text-forest
                     transition-colors duration-[240ms]"
                   aria-label="Toggle confirm password visibility"
@@ -179,6 +252,7 @@ export default function RegisterPage() {
               {!passwordsMatch && (
                 <p className="font-sans text-caption text-clay">Kata sandi tidak cocok.</p>
               )}
+              <FieldError errors={fieldErrors} field="password_confirm" />
             </div>
 
             <button
