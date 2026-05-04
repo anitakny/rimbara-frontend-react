@@ -154,6 +154,15 @@ export default function Navbar() {
                         Profil
                       </Link>
                       <Link
+                        to="/article/my"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 font-sans text-sm text-ink
+                          hover:bg-sand/50 transition-colors duration-[240ms]"
+                      >
+                        Artikel Saya
+                      </Link>
+                      <div className="h-px bg-sand my-1" />
+                      <Link
                         to="/settings"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 font-sans text-sm text-ink
@@ -161,7 +170,6 @@ export default function Navbar() {
                       >
                         Pengaturan
                       </Link>
-                      <div className="h-px bg-sand mx-4 my-1" />
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-2.5 font-sans text-sm text-clay

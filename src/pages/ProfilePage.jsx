@@ -1,58 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Building2, CalendarDays, MapPin, Users, FileText, Camera, Leaf, ArrowUpRight } from 'lucide-react'
+import { Building2, CalendarDays, MapPin, Users, FileText, Camera, Leaf } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
-import ProfilePublicationCard from '../components/ProfilePage/ProfilePublicationCard'
 import Footer from '../components/Footer'
 import { profilesApi, session } from '../lib/api'
-
-// Publications stay as mock until the articles API is built
-const mockPublications = [
-  {
-    type: 'Opinion Editorial',
-    title: 'Kedaulatan Pengetahuan Adat dalam Kerangka Hukum Kehati Indonesia',
-    author: 'Sari Dewi Putri',
-    community: 'Komunitas Dayak Ngaju',
-    year: '2025',
-    excerpt:
-      'Kajian kritis terhadap posisi pengetahuan ekologis masyarakat adat dalam regulasi keanekaragaman hayati Indonesia dan tantangan pengakuan hak epistemic komunitas lokal.',
-    tags: ['Hukum Adat', 'Kehati', 'Kebijakan'],
-    isBookmarked: false,
-  },
-  {
-    type: 'Opinion Editorial',
-    title: 'Etnobotani sebagai Jembatan antara Sains Modern dan Kearifan Lokal Dayak',
-    author: 'Sari Dewi Putri',
-    community: 'Komunitas Dayak Ngaju',
-    year: '2025',
-    excerpt:
-      'Analisis peran etnobotani dalam mendokumentasikan dan memvalidasi pengetahuan pengobatan tradisional masyarakat Dayak Ngaju sebagai kontribusi nyata pada ilmu pengetahuan global.',
-    tags: ['Etnobotani', 'Kearifan Lokal', 'Dayak'],
-    isBookmarked: true,
-  },
-  {
-    type: 'Opinion Editorial',
-    title: 'Mengapa Pemetaan Partisipatif Harus Menjadi Standar dalam Riset Wilayah Adat',
-    author: 'Sari Dewi Putri',
-    community: 'Komunitas Dayak Ngaju',
-    year: '2025',
-    excerpt:
-      'Argumen metodologis untuk menjadikan pemetaan berbasis komunitas sebagai prasyarat etis dalam setiap penelitian yang melibatkan wilayah adat dan sumber daya alam lokal.',
-    tags: ['Metodologi', 'Pemetaan', 'Etika Riset'],
-    isBookmarked: false,
-  },
-  {
-    type: 'Opinion Editorial',
-    title: 'Fungsi Ekologis Rotan dalam Sistem Agroforestri Dayak: Sebuah Tinjauan',
-    author: 'Sari Dewi Putri',
-    community: 'Komunitas Dayak Ngaju',
-    year: '2025',
-    excerpt:
-      'Eksplorasi terhadap peran rotan sebagai spesies kunci dalam praktik agroforestri tradisional masyarakat Dayak dan relevansinya bagi keberlanjutan ekosistem hutan hujan tropis.',
-    tags: ['Agroforestri', 'Ekologi', 'Rotan'],
-    isBookmarked: false,
-  },
-]
 
 // Badge colors for use on white/light background (right panel)
 const roleBadgeColors = {
@@ -100,25 +51,51 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!session.getAccess()) {
       navigate('/login', { replace: true })
       return
     }
-    profilesApi.me().then(({ ok, data }) => {
+    profilesApi.me().then(({ ok, status, data }) => {
       if (ok) {
         setProfile(data)
-      } else if (data?.detail === 'Given token not valid for any token type') {
+      } else if (status === 401 || status === 403) {
         session.clear()
         navigate('/login', { replace: true })
+      } else {
+        setError('Profil tidak dapat dimuat. Coba muat ulang halaman.')
       }
+      setLoading(false)
+    }).catch(() => {
+      setError('Tidak dapat terhubung ke server.')
       setLoading(false)
     })
   }, [])
 
   if (loading) return <ProfileSkeleton />
-  if (!profile) return null
+
+  if (error || !profile) {
+    return (
+      <div className="min-h-screen bg-bone">
+        <Navbar />
+        <main className="pt-16">
+          <div className="max-w-content mx-auto px-6 lg:px-12 py-16 text-center">
+            <p className="font-serif text-h3 font-semibold text-ink mb-2">
+              {error || 'Profil tidak ditemukan.'}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="font-sans text-sm text-forest underline underline-offset-4 hover:text-clay transition-colors duration-[240ms]"
+            >
+              Muat ulang
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   const initials = getInitials(profile.full_name)
   const joinedYear = sessionUser?.date_joined
@@ -339,37 +316,23 @@ export default function ProfilePage() {
               <span className="tag">Karya &amp; Publikasi</span>
             </div>
 
-            <div className="flex items-start justify-between gap-4 mb-6">
-              <h2 className="font-serif text-h1 font-semibold text-ink leading-tight">
-                Hasil{' '}
-                <em className="font-accent italic text-clay">Riset &amp; Tulisan</em>
-              </h2>
-              <a
-                href="/kontributor"
-                className="hidden md:inline-flex items-center gap-1 font-sans text-caption font-medium
-                  text-forest hover:text-clay transition-colors duration-[240ms] underline underline-offset-4
-                  flex-shrink-0 mt-2"
-              >
-                Lihat semua
-                <ArrowUpRight size={13} />
-              </a>
-            </div>
+            <h2 className="font-serif text-h1 font-semibold text-ink leading-tight mb-8">
+              Hasil{' '}
+              <em className="font-accent italic text-clay">Riset &amp; Tulisan</em>
+            </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-              {mockPublications.map((pub) => (
-                <ProfilePublicationCard key={pub.title} publication={pub} />
-              ))}
+            {/* Empty state */}
+            <div className="bg-white rounded-card border border-sand px-8 py-12 flex flex-col items-center text-center">
+              <div className="w-10 h-10 rounded-full bg-sand/60 flex items-center justify-center mb-4">
+                <FileText size={18} className="text-ash/50" />
+              </div>
+              <p className="font-serif text-h3 font-semibold text-ink mb-1">
+                Belum ada karya
+              </p>
+              <p className="font-sans text-body text-ash max-w-xs leading-relaxed">
+                Artikel dan publikasi akan muncul di sini setelah diterbitkan.
+              </p>
             </div>
-
-            <a
-              href="/kontributor"
-              className="md:hidden mt-5 self-center inline-flex items-center gap-1 font-sans text-caption
-                font-medium text-forest hover:text-clay transition-colors duration-[240ms]
-                underline underline-offset-4"
-            >
-              Lihat semua karya
-              <ArrowUpRight size={13} />
-            </a>
           </div>
 
         </div>

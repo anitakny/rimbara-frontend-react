@@ -67,6 +67,19 @@ export const authApi = {
 }
 
 // ---------------------------------------------------------------------------
+// Articles endpoints
+// ---------------------------------------------------------------------------
+
+export const articlesApi = {
+  feed: (content_type = '') => {
+    const qs = content_type ? `?content_type=${content_type}` : ''
+    return _authRequest(`/api/articles/${qs}`)
+  },
+
+  myArticles: () => _authRequest('/api/articles/my/'),
+}
+
+// ---------------------------------------------------------------------------
 // Profile endpoints
 // ---------------------------------------------------------------------------
 
