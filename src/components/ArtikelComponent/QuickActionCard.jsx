@@ -31,7 +31,7 @@ export default function QuickActionCard() {
       {/* Actions */}
       <div className="p-4 flex flex-col gap-2">
         <Link
-          to="/articles/new"
+          to="/article/new"
           className="btn-primary text-sm flex items-center justify-center gap-2"
         >
           <PenLine size={14} />

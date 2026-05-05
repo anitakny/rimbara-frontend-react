@@ -21,7 +21,7 @@ export default function App() {
         <Route path="/home" element={<FeedPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/articles/my" element={<MyArticlePage />} />
+        <Route path="/article/my" element={<MyArticlePage />} />
       </Routes>
     </BrowserRouter>
   )
