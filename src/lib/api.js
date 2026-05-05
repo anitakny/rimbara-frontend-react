@@ -104,6 +104,21 @@ export const articlesApi = {
 }
 
 // ---------------------------------------------------------------------------
+// Etalase endpoints
+// ---------------------------------------------------------------------------
+
+export const etalaseApi = {
+  list: ({ pub_type = '', year = '' } = {}) => {
+    const qs = new URLSearchParams()
+    if (pub_type) qs.append('pub_type', pub_type)
+    if (year)     qs.append('year', year)
+    const q = qs.toString()
+    return _authRequest(`/api/etalase/${q ? `?${q}` : ''}`)
+  },
+  detail: (id) => _authRequest(`/api/etalase/${id}/`),
+}
+
+// ---------------------------------------------------------------------------
 // Profile endpoints
 // ---------------------------------------------------------------------------
 

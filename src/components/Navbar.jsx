@@ -5,6 +5,8 @@ import { authApi, session } from '../lib/api'
 
 const navLinks = [
   { label: 'Beranda', href: '/home' },
+  { label: 'Etalase', href: '/display' },
+  { label: 'Leaderboard', href: '/leaderboard' },
 ]
 
 function getInitials(name) {
@@ -260,7 +262,7 @@ export default function Navbar() {
           </div>
 
           {/* Row 4 — account actions */}
-          <div className="px-4 py-4 flex flex-col gap-1">
+          <div className="px-4 py-4 border-b border-sand flex flex-col gap-1">
             <Link
               to="/profile"
               onClick={closeMenu}
@@ -270,6 +272,18 @@ export default function Navbar() {
               Profil
             </Link>
             <Link
+              to="/articles/my"
+              onClick={closeMenu}
+              className="flex items-center gap-3 px-4 py-2.5 rounded-lg font-sans text-sm text-ink
+                hover:bg-sand/40 transition-colors duration-[240ms]"
+            >
+              Artikel Saya
+            </Link>
+          </div>
+
+          {/* Row 5 - Options */}
+          <div className="px-4 py-4 flex flex-col gap-1">
+            <Link
               to="/settings"
               onClick={closeMenu}
               className="flex items-center gap-3 px-4 py-2.5 rounded-lg font-sans text-sm text-ink
@@ -277,7 +291,6 @@ export default function Navbar() {
             >
               Pengaturan
             </Link>
-            <div className="h-px bg-sand my-1 mx-2" />
             <button
               onClick={handleLogout}
               className="flex items-center gap-3 px-4 py-2.5 rounded-lg font-sans text-sm text-clay

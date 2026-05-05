@@ -1,0 +1,151 @@
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Calendar } from 'lucide-react'
+import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
+import { etalaseApi, session } from '../lib/api'
+import { MOCK_PUBLICATIONS, CATEGORIES, DisplayCard, CardSkeleton } from './DisplayPage'
+
+const BATIK = `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23F5EFE3' fill-opacity='1'%3E%3Cpath d='M30 30l-8-8 8-8 8 8-8 8zm0-16l-8-8 8-8 8 8-8 8zm0 32l-8-8 8-8 8 8-8 8zM14 30l-8-8 8-8 8 8-8 8zm32 0l-8-8 8-8 8 8-8 8z'/%3E%3C/g%3E%3C/svg%3E")`
+
+export default function DisplayCategoryPage() {
+  const { pubType } = useParams()
+  const navigate    = useNavigate()
+
+  const category = CATEGORIES.find(c => c.id === pubType)
+
+  const [publications, setPublications] = useState(
+    MOCK_PUBLICATIONS.filter(p => p.pub_type === pubType)
+  )
+  const [loading, setLoading]       = useState(false)
+  const [yearFilter, setYearFilter] = useState('')
+
+  useEffect(() => {
+    if (!session.getAccess()) {
+      navigate('/login', { replace: true })
+      return
+    }
+    if (!category) {
+      navigate('/display', { replace: true })
+      return
+    }
+    // Try to load real data; keep mock if API returns empty
+    setLoading(true)
+    etalaseApi.list({ pub_type: pubType }).then(({ ok, data }) => {
+      if (ok) {
+        const items = Array.isArray(data) ? data : (data.results ?? [])
+        if (items.length > 0) setPublications(items)
+      }
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [pubType])
+
+  if (!category) return null
+
+  const filtered = yearFilter
+    ? publications.filter(p => String(p.year) === String(yearFilter))
+    : publications
+
+  const years = [...new Set(publications.map(p => p.year))].sort((a, b) => b - a)
+
+  return (
+    <div className="min-h-screen bg-bone">
+      <Navbar />
+
+      <main className="pt-16">
+
+        {/* ── Hero ──────────────────────────────────────────────────── */}
+        <section className="relative min-h-[32vh] flex flex-col justify-end overflow-hidden">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-gradient-to-b from-forest/90 via-forest/70 to-ink/90 z-10" />
+            <div
+              className="absolute inset-0 z-0"
+              style={{ background: 'radial-gradient(ellipse at 30% 40%, #2A4F3C 0%, transparent 60%), radial-gradient(ellipse at 70% 60%, #4A6238 0%, transparent 50%), linear-gradient(160deg, #1F3B2D 0%, #2A4F3C 55%, #162A20 100%)' }}
+            />
+            <div className="absolute inset-0 z-20 opacity-[0.05]" style={{ backgroundImage: BATIK }} />
+          </div>
+
+          <div className="relative z-30 max-w-content mx-auto px-6 lg:px-12 pb-14 pt-24 w-full">
+            <div className="max-w-2xl">
+              <div className="flex items-center gap-4 mb-5">
+                <div className="h-px w-8 bg-clay/60" />
+                <span className="font-sans text-caption uppercase tracking-widest text-bone/60 font-medium">
+                  {category.label}
+                </span>
+              </div>
+              <h1 className="font-serif text-display font-semibold text-bone leading-[1.05]">
+                Koleksi{' '}
+                <em className="font-accent italic text-sand/90">{category.headingAccent}</em>
+              </h1>
+            </div>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-bone to-transparent z-30" />
+        </section>
+
+        {/* ── Content ───────────────────────────────────────────────── */}
+        <div className="max-w-content mx-auto px-6 lg:px-12 py-12 md:py-16">
+
+          {/* Back */}
+          <button
+            onClick={() => navigate('/display')}
+            className="flex items-center gap-2 font-sans text-sm text-ash hover:text-forest
+              transition-colors duration-[240ms] mb-10"
+          >
+            <ArrowLeft size={15} />
+            Kembali ke Etalase
+          </button>
+
+          {/* Filter + count bar */}
+          <div className="flex flex-wrap items-center gap-3 mb-10 p-4 bg-white rounded-card border border-sand shadow-subtle">
+            <div className="flex items-center gap-2 px-3 py-2 bg-sand/20 rounded-lg border border-sand">
+              <Calendar size={13} className="text-forest flex-shrink-0" />
+              <select
+                value={yearFilter}
+                onChange={(e) => setYearFilter(e.target.value)}
+                className="bg-transparent font-sans text-sm text-ink outline-none cursor-pointer"
+              >
+                <option value="">Semua Tahun</option>
+                {years.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            {!loading && (
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="font-serif text-h3 font-semibold text-forest font-tabular">
+                  {filtered.length}
+                </span>
+                <span className="font-sans text-caption text-ash">publikasi</span>
+              </div>
+            )}
+          </div>
+
+          {/* Grid — all items, no cap */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {loading
+              ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
+              : filtered.map((item) => <DisplayCard key={item.id} item={item} />)
+            }
+          </div>
+
+          {/* Empty state */}
+          {!loading && filtered.length === 0 && (
+            <div className="bg-white rounded-card border border-sand shadow-subtle px-8 py-16 text-center">
+              <p className="font-serif text-h3 font-semibold text-ink mb-2">Belum ada publikasi</p>
+              <p className="font-sans text-body text-ash">
+                {yearFilter
+                  ? `Tidak ada publikasi untuk tahun ${yearFilter}.`
+                  : 'Publikasi akan muncul di sini setelah diunggah oleh admin.'}
+              </p>
+            </div>
+          )}
+
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
