@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Building2, CalendarDays, MapPin, Users, FileText, Camera, Leaf, Fingerprint } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { profilesApi, session } from '../lib/api'
@@ -46,33 +46,52 @@ function ProfileSkeleton() {
 }
 
 export default function ProfilePage() {
+  const { userId } = useParams()
   const navigate = useNavigate()
   const sessionUser = session.getUser()
 
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (!session.getAccess()) {
-      navigate('/login', { replace: true })
-      return
-    }
-    profilesApi.me().then(({ ok, status, data }) => {
-      if (ok) {
-        setProfile(data)
-      } else if (status === 401 || status === 403) {
-        session.clear()
+    const isMe = !userId || userId === sessionUser?.id
+
+    if (isMe) {
+      if (!session.getAccess()) {
         navigate('/login', { replace: true })
-      } else {
-        setError('Profil tidak dapat dimuat. Coba muat ulang halaman.')
+        return
       }
-      setLoading(false)
-    }).catch(() => {
-      setError('Tidak dapat terhubung ke server.')
-      setLoading(false)
-    })
-  }, [])
+      profilesApi.me().then(({ ok, status, data }) => {
+        if (ok) {
+          setProfile(data)
+        } else if (status === 401 || status === 403) {
+          session.clear()
+          navigate('/login', { replace: true })
+        } else {
+          setError('Profil tidak dapat dimuat.')
+        }
+        setLoading(false)
+      }).catch(() => {
+        setError('Gagal memuat profil.')
+        setLoading(false)
+      })
+    } else {
+      // Profil orang lain (Public)
+      profilesApi.public(userId).then(({ ok, data }) => {
+        if (ok) {
+          setProfile(data)
+        } else {
+          setError('Profil kontributor tidak ditemukan.')
+        }
+        setLoading(false)
+      }).catch(() => {
+        setError('Terjadi kesalahan jaringan.')
+        setLoading(false)
+      })
+    }
+  }, [userId, navigate, sessionUser?.id])
 
   if (loading) return <ProfileSkeleton />
 
@@ -202,7 +221,7 @@ export default function ProfilePage() {
               <div className="flex flex-col gap-3.5 mb-6 -mt-4">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="font-sans text-xs text-ash/70">{profile.id}</span>
+                    <span className="font-sans text-xs text-ash/70">{userId || sessionUser?.id || profile.id}</span>
                   </div>
                 </div>
 

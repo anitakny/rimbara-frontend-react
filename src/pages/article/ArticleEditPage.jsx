@@ -138,6 +138,7 @@ function ContributorChip({ contributor, onRemove }) {
 function UserSearchDropdown({ excluded, onSelect, onClose }) {
   const [uuid, setUuid]       = useState('')
   const [found, setFound]     = useState(null)
+  const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
   const inputRef = useRef(null)
 
@@ -186,8 +187,13 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             className="flex-1 font-mono text-xs text-ink placeholder:text-ash/40 outline-none bg-bone border border-sand rounded-lg px-2.5 py-1.5 focus:border-forest transition-colors duration-[200ms]"
           />
-          <button type="button" onClick={lookup} className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-forest text-white font-sans text-xs font-medium hover:bg-forest/90 transition-all duration-[200ms]">
-            Cek
+          <button 
+            type="button" 
+            onClick={lookup} 
+            disabled={loading || !uuid.trim()}
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-forest text-white font-sans text-xs font-medium hover:bg-forest/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-[200ms] flex items-center gap-1.5"
+          >
+            {loading ? <Loader2 size={12} className="animate-spin" /> : 'Cek'}
           </button>
         </div>
         {error && <p className="font-sans text-[0.65rem] text-clay mt-1.5">{error}</p>}

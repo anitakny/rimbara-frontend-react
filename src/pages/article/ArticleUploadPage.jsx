@@ -243,10 +243,11 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
           <button
             type="button"
             onClick={lookup}
+            disabled={loading || !uuid.trim()}
             className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-forest text-white font-sans text-xs font-medium
-              hover:bg-forest/90 transition-all duration-[200ms]"
+              hover:bg-forest/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-[200ms] flex items-center gap-1.5"
           >
-            Cek
+            {loading ? <Loader2 size={12} className="animate-spin" /> : 'Cek'}
           </button>
         </div>
         {error && (

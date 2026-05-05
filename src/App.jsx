@@ -23,6 +23,7 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/home" element={<FeedPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/articles/my"  element={<MyArticlePage />} />
         <Route path="/articles/new" element={<ArticleUploadPage />} />
