@@ -67,7 +67,7 @@ export default function FeedProfileCard() {
             <ArrowUpRight size={13} className="text-ash/50 group-hover:text-forest transition-colors duration-[240ms]" />
           </Link>
           <Link
-            to="/article/my"
+            to="/articles/my"
             className="flex items-center justify-between py-1.5 px-2 rounded-lg font-sans text-sm
               text-ink hover:bg-sand/40 hover:text-forest transition-all duration-[240ms] group"
           >

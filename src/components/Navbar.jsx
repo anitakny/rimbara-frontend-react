@@ -154,7 +154,7 @@ export default function Navbar() {
                         Profil
                       </Link>
                       <Link
-                        to="/article/my"
+                        to="/articles/my"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 font-sans text-sm text-ink
                           hover:bg-sand/50 transition-colors duration-[240ms]"

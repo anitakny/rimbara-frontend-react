@@ -32,6 +32,18 @@ export const session = {
   },
 }
 
+// For multipart/form-data (file uploads) — no Content-Type header, browser sets it with boundary
+function _authFetch(path, opts = {}) {
+  const { headers: extraHeaders, ...restOpts } = opts
+  return fetch(`${BASE}${path}`, {
+    ...restOpts,
+    headers: { Authorization: `Bearer ${session.getAccess()}`, ...extraHeaders },
+  }).then(async (res) => {
+    const data = await res.json().catch(() => ({}))
+    return { ok: res.ok, status: res.status, data }
+  })
+}
+
 function _authRequest(path, opts = {}) {
   return _request(path, {
     ...opts,
@@ -77,6 +89,9 @@ export const articlesApi = {
   },
 
   myArticles: () => _authRequest('/api/articles/my/'),
+
+  // FormData upload — content_type, file (PDF/DOCX), title?, abstract?, contributor_ids[]
+  create: (formData) => _authFetch('/api/articles/', { method: 'POST', body: formData }),
 }
 
 // ---------------------------------------------------------------------------
