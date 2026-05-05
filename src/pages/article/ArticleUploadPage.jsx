@@ -194,7 +194,14 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
   }, [onClose])
 
   const lookup = async () => {
-    const trimmed = uuid.trim()
+    let trimmed = uuid.trim()
+    
+    // Auto-format: add dashes if missing and it looks like a 32-char UUID
+    if (trimmed.length === 32 && !trimmed.includes('-')) {
+      trimmed = `${trimmed.slice(0, 8)}-${trimmed.slice(8, 12)}-${trimmed.slice(12, 16)}-${trimmed.slice(16, 20)}-${trimmed.slice(20)}`
+      setUuid(trimmed)
+    }
+
     if (!UUID_RE.test(trimmed)) {
       setError('Format UUID tidak valid.')
       setFound(null)
@@ -205,15 +212,25 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
       setFound(null)
       return
     }
+
+    setLoading(true)
     setError('')
-    // Karena endpoint public profile backend tidak tersedia/mengalami error,
-    // kita bypass lookup nama dan langsung izinkan UUID ditambahkan.
-    // Validasi final apakah user benar-benar ada akan dilakukan oleh backend saat submit artikel.
-    setFound({ 
-      id: trimmed, 
-      full_name: 'User Terverifikasi', 
-      institution: `ID: ${trimmed.split('-')[0]}...` 
-    })
+    try {
+      const { ok, status, data } = await profilesApi.public(trimmed)
+      if (ok) {
+        setFound(data)
+      } else if (status === 404) {
+        setError('Pengguna dengan ID tersebut tidak ditemukan.')
+        setFound(null)
+      } else {
+        setError('Gagal memverifikasi ID. Coba lagi.')
+        setFound(null)
+      }
+    } catch (err) {
+      setError('Gangguan koneksi ke server.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const confirm = () => {
@@ -255,18 +272,21 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
         )}
       </div>
 
-      {/* Result preview */}
       {found && (
-        <div className="px-3 py-2.5">
+        <div className="px-3 py-2.5 animate-in fade-in slide-in-from-top-1 duration-300">
           <div className="flex items-center gap-3 bg-forest/5 border border-forest/15 rounded-lg px-3 py-2.5 mb-2.5">
             <div className="w-8 h-8 rounded-full bg-forest/10 flex items-center justify-center flex-shrink-0">
               <span className="font-serif font-semibold text-[0.6rem] text-forest leading-none">
-                ID
+                {found.full_name?.charAt(0).toUpperCase() || 'ID'}
               </span>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-sans text-sm font-medium text-ink leading-snug truncate">ID Valid</p>
-              <p className="font-sans text-caption text-ash leading-snug truncate">Akan diverifikasi saat disubmit</p>
+              <p className="font-sans text-sm font-medium text-ink leading-snug truncate">
+                {found.full_name}
+              </p>
+              <p className="font-sans text-caption text-ash leading-snug truncate">
+                {found.institution || 'Anggota Rimbahari'}
+              </p>
             </div>
             <UserRound size={14} className="text-forest flex-shrink-0" />
           </div>
@@ -274,7 +294,7 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
             type="button"
             onClick={confirm}
             className="w-full py-2 rounded-lg bg-forest text-white font-sans text-sm font-medium
-              hover:bg-forest/90 transition-colors duration-[200ms]"
+              hover:bg-forest/90 transition-colors duration-[200ms] active:scale-[0.98]"
           >
             Tambahkan
           </button>
