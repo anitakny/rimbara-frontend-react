@@ -9,6 +9,8 @@ import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import MyArticlePage from './pages/article/MyArticlePage'
 import ArticleUploadPage from './pages/article/ArticleUploadPage'
+import ArticleEditPage from './pages/article/ArticleEditPage'
+import ArticleDetailPage from './pages/article/ArticleDetailPage'
 
 export default function App() {
   return (
@@ -24,6 +26,8 @@ export default function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/articles/my"  element={<MyArticlePage />} />
         <Route path="/articles/new" element={<ArticleUploadPage />} />
+        <Route path="/articles/:id/edit" element={<ArticleEditPage />} />
+        <Route path="/articles/:id" element={<ArticleDetailPage />} />
       </Routes>
     </BrowserRouter>
   )

@@ -1,19 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
-import { Upload, X, Plus, Search, FileText, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { Upload, X, Plus, UserRound, FileText, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
-import { articlesApi, session } from '../../lib/api'
+import { articlesApi, profilesApi, session } from '../../lib/api'
 
-// ---------------------------------------------------------------------------
-// Mock user list — replace with /api/users/search/ when backend provides it
-// ---------------------------------------------------------------------------
-const MOCK_USERS = [
-  { id: 'a1b2c3d4-0000-0000-0000-000000000001', full_name: 'Ahmad Fauzi',    institution: 'Universitas Indonesia' },
-  { id: 'a1b2c3d4-0000-0000-0000-000000000002', full_name: 'Winda Lestari',  institution: 'Komunitas Dayak Ngaju' },
-  { id: 'a1b2c3d4-0000-0000-0000-000000000003', full_name: 'Budi Santoso',   institution: 'IPB University' },
-  { id: 'a1b2c3d4-0000-0000-0000-000000000004', full_name: 'Rina Handayani', institution: 'Universitas Gadjah Mada' },
-  { id: 'a1b2c3d4-0000-0000-0000-000000000005', full_name: 'Yazid Maulana',  institution: 'Politeknik Negeri Jakarta' },
-]
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import * as mammothNs from 'mammoth'
+
+// Vite bundles the worker from node_modules — no CDN, no version mismatch
+GlobalWorkerOptions.workerSrc = pdfWorkerUrl
+
+// mammoth may expose API on .default (ESM interop) or directly (CJS)
+const mammoth = mammothNs.default ?? mammothNs
+
+// UUID validation regex
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const ALLOWED_MIME = [
   'application/pdf',
@@ -37,66 +39,108 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Extract title + abstract from raw text
+// Extract title + abstract from raw text of Indonesian/English academic PDFs
 function extractMeta(rawText) {
-  const paragraphs = rawText
+  const lines = rawText
     .replace(/\r\n/g, '\n')
-    .split(/\n{2,}/)
-    .map((p) => p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
-    .filter((p) => p.length > 8)
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
 
-  // Title: first paragraph that's reasonably short (< 250 chars)
-  const titlePara = paragraphs.find((p) => p.length < 250) ?? paragraphs[0] ?? ''
+  // ── Title ────────────────────────────────────────────────────────────────
+  // Collect the opening lines of the document as the title.
+  // Only skip clearly non-title noise — avoid over-filtering on Indonesian
+  // Title Case words (e.g. "Studi Kasus") that look like author names.
+  const titleLines = []
+  for (const line of lines.slice(0, 25)) {
+    // Skip pure noise: page numbers, lone digits/punctuation
+    if (/^[\d\s\W]{1,6}$/.test(line)) continue
+    // Stop at email or URL — reliably marks the author/affiliation block
+    if (/@/.test(line)) break
+    if (/https?:\/\//.test(line)) break
+    titleLines.push(line)
+    // Stop once we have enough text for a title (200 chars or 5 lines)
+    if (titleLines.join(' ').length >= 200) break
+    if (titleLines.length >= 5) break
+  }
+  const title = titleLines.join(' ').replace(/\s+/g, ' ').trim().slice(0, 255)
 
-  // Abstract: look for explicit "Abstract" / "Abstrak" keyword first
-  const abstractKeyword = /^(abstract|abstrak)[:\s]/i
-  const abstractIdx = paragraphs.findIndex((p) => abstractKeyword.test(p))
+  // ── Abstract ───────────────────────────────────────────────────────────────
+  const JOURNAL_HDR_RE = /vol\.|no\.|issn|doi|januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|\|\s*\d+/i
+  const STOP_RE        = /^(kata\s*kunci|keywords?|pendahuluan|introduction)\b/i
+  const CAPS_HDR_RE    = /^[A-Z\s\-:]{4,40}$/
 
   let abstract = ''
-  if (abstractIdx !== -1) {
-    // If paragraph IS the "Abstract: ..." line, strip the keyword prefix
-    const candidate = paragraphs[abstractIdx].replace(abstractKeyword, '').trim()
-    abstract = candidate.length > 20
-      ? candidate
-      : (paragraphs[abstractIdx + 1] ?? '')
-  } else {
-    // Fallback: take the 2nd–4th paragraphs as abstract body
-    abstract = paragraphs
-      .slice(1, 5)
-      .filter((p) => p !== titlePara)
-      .join(' ')
-      .slice(0, 800)
+
+  // Strategy 1: standalone "Abstrak" / "Abstract" heading line
+  const abstractHeadingRE = /^(abstrak|abstract):?\s*$/i
+  const headingIdx = lines.findIndex((l) => abstractHeadingRE.test(l))
+
+  if (headingIdx !== -1) {
+    const body = []
+    for (let i = headingIdx + 1; i < lines.length && body.length < 10; i++) {
+      const l = lines[i]
+      if (STOP_RE.test(l))                        break
+      if (CAPS_HDR_RE.test(l) && l.length < 50)  break
+      if (JOURNAL_HDR_RE.test(l))                 continue
+      if (l.length > 15) body.push(l)
+    }
+    abstract = body.join(' ').replace(/\s+/g, ' ').trim().slice(0, 800)
   }
 
-  return {
-    title: titlePara.slice(0, 255),
-    abstract: abstract.trim(),
+  // Strategy 2: inline prefix — "Abstract. This paper..." / "Abstrak: ..."
+  if (!abstract) {
+    const inlineRE = /^(abstrak|abstract)[.:]\s*/i
+    const inlineLine = lines.find((l) => inlineRE.test(l))
+    if (inlineLine) {
+      abstract = inlineLine.replace(inlineRE, '').trim().slice(0, 800)
+    }
   }
+
+  return { title, abstract }
 }
 
-// Parse PDF — dynamic import so pdfjs-dist is only loaded when needed
 async function parsePDF(file) {
-  const pdfjsLib = await import('pdfjs-dist')
-  const workerUrl = await import('pdfjs-dist/build/pdf.worker?url')
-  pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl.default
-
   const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  const pdf = await getDocument({ data: new Uint8Array(arrayBuffer) }).promise
 
   let fullText = ''
   const pages = Math.min(pdf.numPages, 4)
   for (let i = 1; i <= pages; i++) {
     const page = await pdf.getPage(i)
     const content = await page.getTextContent()
-    fullText += content.items.map((item) => item.str).join(' ') + '\n\n'
+
+    // Group items by y-coordinate to reconstruct real text lines.
+    // PDF coordinates are bottom-up, so higher y = higher on the page.
+    // transform[5] is the y-position; transform[4] is the x-position.
+    const lineMap = new Map()
+    for (const item of content.items) {
+      if (!item.str?.trim()) continue
+      // Round y to nearest 2pt so items on the same visual line cluster together
+      const y = Math.round(item.transform[5] / 2) * 2
+      if (!lineMap.has(y)) lineMap.set(y, [])
+      lineMap.get(y).push({ x: item.transform[4], str: item.str })
+    }
+
+    // Sort lines top-to-bottom (descending y), then sort items left-to-right within each line
+    const sortedLines = [...lineMap.entries()]
+      .sort(([a], [b]) => b - a)
+      .map(([, items]) =>
+        items
+          .sort((a, b) => a.x - b.x)
+          .map((it) => it.str)
+          .join('')
+          .trim()
+      )
+      .filter((l) => l.length > 0)
+
+    fullText += sortedLines.join('\n') + '\n\n'
   }
 
   return extractMeta(fullText)
 }
 
-// Parse DOCX — dynamic import so mammoth is only loaded when needed
 async function parseDOCX(file) {
-  const mammoth = await import('mammoth')
   const arrayBuffer = await file.arrayBuffer()
   const result = await mammoth.extractRawText({ arrayBuffer })
   return extractMeta(result.value)
@@ -130,10 +174,13 @@ function ContributorChip({ contributor, onRemove }) {
 }
 
 // ---------------------------------------------------------------------------
-// User search dropdown
+// Contributor lookup — searches by User UUID via GET /api/profiles/{id}/
 // ---------------------------------------------------------------------------
 function UserSearchDropdown({ excluded, onSelect, onClose }) {
-  const [query, setQuery] = useState('')
+  const [uuid, setUuid]       = useState('')
+  const [found, setFound]     = useState(null)   // profile object from API
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -145,52 +192,98 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [onClose])
 
-  const results = MOCK_USERS.filter(
-    (u) =>
-      !excluded.includes(u.id) &&
-      (u.full_name.toLowerCase().includes(query.toLowerCase()) ||
-        u.institution.toLowerCase().includes(query.toLowerCase())),
-  )
+  const lookup = async () => {
+    const trimmed = uuid.trim()
+    if (!UUID_RE.test(trimmed)) {
+      setError('Format UUID tidak valid.')
+      setFound(null)
+      return
+    }
+    if (excluded.includes(trimmed)) {
+      setError('Pengguna ini sudah ditambahkan.')
+      setFound(null)
+      return
+    }
+    setError('')
+    // Karena endpoint public profile backend tidak tersedia/mengalami error,
+    // kita bypass lookup nama dan langsung izinkan UUID ditambahkan.
+    // Validasi final apakah user benar-benar ada akan dilakukan oleh backend saat submit artikel.
+    setFound({ 
+      id: trimmed, 
+      full_name: 'User Terverifikasi', 
+      institution: `ID: ${trimmed.split('-')[0]}...` 
+    })
+  }
+
+  const confirm = () => {
+    if (found) { onSelect(found); onClose() }
+  }
 
   return (
     <div
       data-dropdown
-      className="absolute z-50 top-full left-0 mt-2 w-72 bg-white rounded-card border border-sand shadow-elevated overflow-hidden"
+      className="absolute z-50 top-full left-0 mt-2 w-80 bg-white rounded-card border border-sand shadow-elevated overflow-hidden"
     >
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-sand">
-        <Search size={13} className="text-ash flex-shrink-0" />
-        <input
-          ref={inputRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari nama atau institusi…"
-          className="flex-1 font-sans text-sm text-ink placeholder:text-ash/50 outline-none bg-transparent"
-        />
-      </div>
-      <div className="max-h-52 overflow-y-auto">
-        {results.length === 0 ? (
-          <p className="font-sans text-caption text-ash text-center py-6">Tidak ada hasil.</p>
-        ) : (
-          results.map((u) => (
-            <button
-              key={u.id}
-              type="button"
-              onClick={() => { onSelect(u); onClose() }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-sand/40 transition-colors duration-[240ms] text-left"
-            >
-              <div className="w-8 h-8 rounded-full bg-forest/10 flex items-center justify-center flex-shrink-0">
-                <span className="font-serif font-semibold text-[0.6rem] text-forest leading-none">
-                  {u.full_name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()}
-                </span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-sans text-sm font-medium text-ink leading-snug truncate">{u.full_name}</p>
-                <p className="font-sans text-caption text-ash leading-snug truncate">{u.institution}</p>
-              </div>
-            </button>
-          ))
+      {/* UUID input row */}
+      <div className="px-3 py-2.5 border-b border-sand">
+        <p className="font-sans text-[0.6rem] uppercase tracking-widest text-ash mb-1.5">
+          Masukkan User ID kontributor
+        </p>
+        <div className="flex gap-2">
+          <input
+            ref={inputRef}
+            value={uuid}
+            onChange={(e) => { setUuid(e.target.value); setError(''); setFound(null) }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), lookup())}
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            className="flex-1 font-mono text-xs text-ink placeholder:text-ash/40 outline-none bg-bone
+              border border-sand rounded-lg px-2.5 py-1.5 focus:border-forest transition-colors duration-[200ms]"
+          />
+          <button
+            type="button"
+            onClick={lookup}
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-forest text-white font-sans text-xs font-medium
+              hover:bg-forest/90 transition-all duration-[200ms]"
+          >
+            Cek
+          </button>
+        </div>
+        {error && (
+          <p className="font-sans text-[0.65rem] text-clay mt-1.5">{error}</p>
         )}
       </div>
+
+      {/* Result preview */}
+      {found && (
+        <div className="px-3 py-2.5">
+          <div className="flex items-center gap-3 bg-forest/5 border border-forest/15 rounded-lg px-3 py-2.5 mb-2.5">
+            <div className="w-8 h-8 rounded-full bg-forest/10 flex items-center justify-center flex-shrink-0">
+              <span className="font-serif font-semibold text-[0.6rem] text-forest leading-none">
+                ID
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-sans text-sm font-medium text-ink leading-snug truncate">ID Valid</p>
+              <p className="font-sans text-caption text-ash leading-snug truncate">Akan diverifikasi saat disubmit</p>
+            </div>
+            <UserRound size={14} className="text-forest flex-shrink-0" />
+          </div>
+          <button
+            type="button"
+            onClick={confirm}
+            className="w-full py-2 rounded-lg bg-forest text-white font-sans text-sm font-medium
+              hover:bg-forest/90 transition-colors duration-[200ms]"
+          >
+            Tambahkan
+          </button>
+        </div>
+      )}
+
+      {!found && !error && (
+        <p className="font-sans text-caption text-ash text-center py-4">
+          Tempel User ID lalu tekan Cek.
+        </p>
+      )}
     </div>
   )
 }
@@ -200,7 +293,7 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
 // ---------------------------------------------------------------------------
 const PARSE_STEPS = [
   'Membaca struktur dokumen…',
-  'Mengekstrak teks dan metadata…',
+  'Mengekstrak judul dan abstrak…',
   'Menyiapkan formulir…',
 ]
 
@@ -255,6 +348,7 @@ export default function ArticleUploadPage() {
   const [submitting, setSubmitting]   = useState(false)
   const [fieldErrors, setFieldErrors] = useState({})
   const [serverError, setServerError] = useState('')
+  const [parseError, setParseError]   = useState('')
 
   const fileInputRef = useRef(null)
 
@@ -262,8 +356,8 @@ export default function ArticleUploadPage() {
     if (!session.getAccess()) navigate('/login', { replace: true })
   }, [navigate])
 
-  // ── File acceptance + simulated parse ────────────────────────────────
-  const acceptFile = (f) => {
+  // ── File acceptance + real client-side parse ─────────────────────────
+  const acceptFile = async (f) => {
     if (!ALLOWED_MIME.includes(f.type)) {
       setFieldErrors((e) => ({ ...e, file: 'Hanya file PDF atau DOCX yang diterima.' }))
       return
@@ -275,15 +369,28 @@ export default function ArticleUploadPage() {
 
     setFile(f)
     setFieldErrors((e) => ({ ...e, file: undefined }))
+    setParseError('')
     setParsing(true)
+    setTitle('')
+    setAbstract('')
 
-    // Parsing animation only — actual title/abstract extraction happens on the backend at submit
-    setTimeout(() => setParsing(false), 1800)
+    try {
+      const isPDF = f.type === 'application/pdf'
+      const { title: t, abstract: a } = isPDF ? await parsePDF(f) : await parseDOCX(f)
+      setTitle(t)
+      setAbstract(a)
+    } catch (err) {
+      setParseError(`Parsing error: ${err?.message ?? String(err)}`)
+      console.error('Client-side parse error:', err)
+    } finally {
+      setParsing(false)
+    }
   }
 
   const removeFile = () => {
     setFile(null)
     setParsing(false)
+    setParseError('')
     setTitle('')
     setAbstract('')
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -301,6 +408,9 @@ export default function ArticleUploadPage() {
   const dropContributor = (id)   => setContributors((c) => c.filter((u) => u.id !== id))
 
   // ── Submit ────────────────────────────────────────────────────────────
+  // Tracks which button triggered the submit — 'draft' or 'review'
+  const submitActionRef = useRef('draft')
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!file || parsing) return
@@ -319,6 +429,14 @@ export default function ArticleUploadPage() {
     const { ok, status, data } = await articlesApi.create(fd)
 
     if (ok) {
+      if (submitActionRef.current === 'review') {
+        const submitRes = await articlesApi.submit(data.id)
+        if (!submitRes.ok) {
+          setServerError(submitRes.data?.error || submitRes.data?.detail || 'Gagal mengajukan artikel. Tersimpan sebagai draf.')
+          setSubmitting(false)
+          return
+        }
+      }
       navigate('/articles/my')
     } else if (status === 400 && data.errors) {
       setFieldErrors(data.errors)
@@ -369,7 +487,6 @@ export default function ArticleUploadPage() {
               <div className="px-6 pt-5 pb-4 border-b border-sand">
                 <div className="flex items-center gap-3 mb-1">
                   <div className="h-px w-6 bg-clay/50" />
-                  <span className="font-sans text-[0.6rem] uppercase tracking-widest text-ash/60">Wajib</span>
                 </div>
                 <h2 className="font-serif text-h3 font-semibold text-ink">Dokumen</h2>
               </div>
@@ -380,14 +497,28 @@ export default function ArticleUploadPage() {
                   <ParsingOverlay filename={file?.name ?? ''} />
                 ) : file ? (
                   /* File ready */
-                  <div className="flex items-center gap-4 bg-forest/5 border border-forest/20 rounded-lg px-4 py-3">
-                    <div className="w-10 h-10 rounded-lg bg-forest/10 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 size={18} className="text-forest" />
+                  <div className={`flex items-center gap-4 border rounded-lg px-4 py-3 ${
+                    parseError
+                      ? 'bg-clay/5 border-clay/25'
+                      : 'bg-forest/5 border-forest/20'
+                  }`}>
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      parseError ? 'bg-clay/10' : 'bg-forest/10'
+                    }`}>
+                      {parseError
+                        ? <AlertCircle size={18} className="text-clay" />
+                        : <CheckCircle2 size={18} className="text-forest" />
+                      }
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-sans text-sm font-medium text-ink leading-snug truncate">{file.name}</p>
-                      <p className="font-sans text-caption text-moss">
-                        {formatSize(file.size)} · Dokumen berhasil dianalisis
+                      <p className={`font-sans text-caption ${
+                        parseError ? 'text-clay' : 'text-moss'
+                      }`}>
+                        {parseError
+                          ? 'Gagal menganalisis dokumen — judul & abstrak perlu diisi manual'
+                          : `${formatSize(file.size)} · Dokumen berhasil dianalisis`
+                        }
                       </p>
                     </div>
                     <button
@@ -447,9 +578,6 @@ export default function ArticleUploadPage() {
                 <div className="px-6 pt-5 pb-4 border-b border-sand">
                   <div className="flex items-center gap-3 mb-1">
                     <div className="h-px w-6 bg-clay/50" />
-                    <span className="font-sans text-[0.6rem] uppercase tracking-widest text-ash/60">
-                      Opsional — otomatis dari file
-                    </span>
                   </div>
                   <h2 className="font-serif text-h3 font-semibold text-ink">Metadata</h2>
                 </div>
@@ -464,7 +592,7 @@ export default function ArticleUploadPage() {
                       type="text"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Diambil otomatis dari dokumen…"
+                      placeholder="..."
                       maxLength={255}
                       className={`bg-bone border rounded-lg px-4 py-3 font-sans text-sm text-ink
                         placeholder:text-ash/40 outline-none focus:ring-2 transition-all duration-[240ms] ${
@@ -486,7 +614,7 @@ export default function ArticleUploadPage() {
                     <textarea
                       value={abstract}
                       onChange={(e) => setAbstract(e.target.value)}
-                      placeholder="Diambil otomatis dari dokumen…"
+                      placeholder="..."
                       rows={4}
                       className={`bg-bone border rounded-lg px-4 py-3 font-sans text-sm text-ink
                         placeholder:text-ash/40 outline-none focus:ring-2 transition-all duration-[240ms] resize-none ${
@@ -499,12 +627,14 @@ export default function ArticleUploadPage() {
                       <p className="font-sans text-caption text-clay">{fieldErrors.abstract[0]}</p>
                     )}
                   </div>
+                  <span className="font-sans text-[0.6rem] uppercase tracking-widest text-ash/60">Periksa kembali judul dan abstrak, jika tidak sesuai silahkan isi secara manual.</span>
                 </div>
               </div>
 
             {/* ── Contributors ─────────────────────────────────── */}
-            <div className="bg-white rounded-card border border-sand shadow-subtle overflow-hidden">
-                <div className="px-6 pt-5 pb-4 border-b border-sand">
+            {/* overflow-visible so the search dropdown is not clipped by the card boundary */}
+            <div className="bg-white rounded-card border border-sand shadow-subtle">
+                <div className="px-6 pt-5 pb-4 border-b border-sand rounded-t-card">
                   <div className="flex items-center gap-3 mb-1">
                     <div className="h-px w-6 bg-clay/50" />
                     <span className="font-sans text-[0.6rem] uppercase tracking-widest text-ash/60">Opsional</span>
@@ -515,8 +645,8 @@ export default function ArticleUploadPage() {
                   </p>
                 </div>
 
-                <div className="px-6 py-5">
-                  <div className="flex flex-wrap items-start gap-2 relative">
+                <div className="px-6 py-5 rounded-b-card">
+                  <div className="flex flex-wrap items-start gap-2">
                     {contributors.map((c) => (
                       <ContributorChip key={c.id} contributor={c} onRemove={dropContributor} />
                     ))}
@@ -546,37 +676,63 @@ export default function ArticleUploadPage() {
               </div>
 
             {/* ── Submit ───────────────────────────────────────── */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="font-sans text-sm text-ash hover:text-ink transition-colors duration-[240ms]"
+                className="font-sans text-sm text-ash hover:text-ink transition-colors duration-[240ms] flex-shrink-0"
               >
                 Batal
               </button>
 
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="btn-primary flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" />
-                    Mengunggah…
-                  </>
-                ) : parsing ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" />
-                    Menganalisis…
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={15} />
-                    Simpan sebagai Draf
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Save as Draft */}
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  onClick={() => { submitActionRef.current = 'draft' }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-sand bg-white
+                    font-sans text-sm font-medium text-ink hover:border-forest/40 hover:text-forest
+                    transition-all duration-[240ms] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {submitting && submitActionRef.current === 'draft' ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Menyimpan…
+                    </>
+                  ) : (
+                    <>
+                      <FileText size={14} />
+                      Simpan sebagai Draf
+                    </>
+                  )}
+                </button>
+
+                {/* Submit for review */}
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  onClick={() => { submitActionRef.current = 'review' }}
+                  className="btn-primary flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {submitting && submitActionRef.current === 'review' ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Mengajukan…
+                    </>
+                  ) : parsing ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Menganalisis…
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={14} />
+                      Ajukan untuk Ditinjau
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
           </form>

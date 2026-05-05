@@ -90,8 +90,17 @@ export const articlesApi = {
 
   myArticles: () => _authRequest('/api/articles/my/'),
 
+  detail: (id) => _authRequest(`/api/articles/${id}/`),
+
   // FormData upload — content_type, file (PDF/DOCX), title?, abstract?, contributor_ids[]
   create: (formData) => _authFetch('/api/articles/', { method: 'POST', body: formData }),
+
+  // FormData upload for update
+  update: (id, formData) => _authFetch(`/api/articles/${id}/`, { method: 'PATCH', body: formData }),
+
+  deleteArticle: (id) => _authRequest(`/api/articles/${id}/`, { method: 'DELETE' }),
+
+  submit: (id) => _authRequest(`/api/articles/${id}/submit/`, { method: 'PATCH' }),
 }
 
 // ---------------------------------------------------------------------------
@@ -117,4 +126,8 @@ export const profilesApi = {
         ...(location.trim() && { location: location.trim() }),
       }),
     }),
+
+  // GET /api/profiles/{user_id}/ — public, no auth required
+  public: (userId) =>
+    _request(`/api/profiles/${userId}/`),
 }

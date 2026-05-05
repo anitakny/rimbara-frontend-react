@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Building2, CalendarDays, MapPin, Users, FileText, Camera, Leaf } from 'lucide-react'
+import { Building2, CalendarDays, MapPin, Users, FileText, Camera, Leaf, Fingerprint } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -199,7 +199,13 @@ export default function ProfilePage() {
                 <em className="font-accent italic text-clay">{profile.full_name}</em>
               </h2>
 
-              <div className="flex flex-col gap-3.5 mb-6">
+              <div className="flex flex-col gap-3.5 mb-6 -mt-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-sans text-xs text-ash/70">{profile.id}</span>
+                  </div>
+                </div>
+
                 {profile.institution && (
                   <div className="flex items-center gap-3">
                     <Building2 size={17} className="text-ash flex-shrink-0" />

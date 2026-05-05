@@ -103,7 +103,7 @@ function ArticleRow({ article }) {
           {timeAgo(article.updated_at ?? article.created_at)}
         </span>
         <Link
-          to={`/articles/${article.id}`}
+          to={article.status === 'DRAFT' || article.status === 'REVISION' ? `/articles/${article.id}/edit` : `/articles/${article.id}`}
           className="inline-flex items-center gap-1 font-sans text-xs font-medium
             text-forest hover:text-clay transition-colors duration-[240ms]"
         >
