@@ -3,6 +3,7 @@ import { Upload, X, Plus, UserRound, FileText, AlertCircle, CheckCircle2, Loader
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import { articlesApi, session } from '../../lib/api'
+import ArticleDeleteModal from '../../components/ArticlePage/ArticleDeleteModal'
 
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
@@ -246,6 +247,7 @@ export default function ArticleEditPage() {
   const navigate = useNavigate()
   const { id } = useParams()
 
+  const [articleStatus, setArticleStatus] = useState('')
   const [loading, setLoading]   = useState(true)
   const [file, setFile]         = useState(null)
   const [existingFile, setExistingFile] = useState(null)
@@ -258,6 +260,8 @@ export default function ArticleEditPage() {
   const [showSearch, setShowSearch]     = useState(false)
 
   const [submitting, setSubmitting]   = useState(false)
+  const [deleting, setDeleting]       = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [fieldErrors, setFieldErrors] = useState({})
   const [serverError, setServerError] = useState('')
   const [parseError, setParseError]   = useState('')
@@ -274,11 +278,15 @@ export default function ArticleEditPage() {
     async function loadArticle() {
       const { ok, status, data } = await articlesApi.detail(id)
       if (ok) {
+        setArticleStatus(data.status)
         setTitle(data.title || '')
         setAbstract(data.abstract || '')
         setContributors(data.contributors?.map(c => ({ id: c.user.id, full_name: c.user.full_name, institution: '' })) || [])
-        if (data.original_file_url) {
-          setExistingFile({ name: data.original_file_url.split('/').pop() || 'Dokumen terlampir' })
+        
+        if (data.pdf_url) {
+          setExistingFile({ name: data.pdf_url.split('/').pop() || 'Dokumen terlampir' })
+        } else if (data.original_file_type) {
+          setExistingFile({ name: `Dokumen_Asli.${data.original_file_type.toLowerCase()}` })
         }
       } else {
         setServerError('Gagal memuat artikel.')
@@ -366,6 +374,21 @@ export default function ArticleEditPage() {
     setSubmitting(false)
   }
 
+  const handleDelete = () => setIsDeleteModalOpen(true)
+
+  const executeDelete = async () => {
+    setDeleting(true)
+    setServerError('')
+    const { ok, data } = await articlesApi.deleteArticle(id)
+    if (ok) {
+      navigate('/articles/my')
+    } else {
+      setServerError(data?.error || data?.detail || 'Gagal menghapus draf.')
+      setDeleting(false)
+      setIsDeleteModalOpen(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-bone flex flex-col items-center justify-center">
@@ -416,7 +439,7 @@ export default function ArticleEditPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-sans text-sm font-medium text-ink leading-snug truncate">{file ? file.name : existingFile.name}</p>
                       <p className={`font-sans text-caption ${parseError ? 'text-clay' : 'text-moss'}`}>
-                        {parseError ? 'Gagal menganalisis dokumen' : (file ? `${formatSize(file.size)} · Siap diunggah` : 'Tersimpan di server')}
+                        {parseError ? 'Gagal menganalisis dokumen' : (file ? `${formatSize(file.size)} · Siap diunggah` : 'Tersedia di server')}
                       </p>
                     </div>
                     <button type="button" onClick={removeFile} className="text-ash/50 hover:text-clay transition-colors flex-shrink-0"><X size={16} /></button>
@@ -479,13 +502,21 @@ export default function ArticleEditPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <button type="button" onClick={() => navigate(-1)} className="font-sans text-sm text-ash hover:text-ink transition-colors flex-shrink-0">Batal</button>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-4">
+                <button type="button" onClick={() => navigate(-1)} className="font-sans text-sm text-ash hover:text-ink transition-colors flex-shrink-0">Batal</button>
+                {articleStatus === 'DRAFT' && (
+                  <button type="button" onClick={handleDelete} disabled={deleting || submitting} className="font-sans text-sm text-clay hover:text-sienna transition-colors flex-shrink-0 disabled:opacity-40 flex items-center gap-1">
+                    {deleting ? <Loader2 size={14} className="animate-spin" /> : null}
+                    Hapus
+                  </button>
+                )}
+              </div>
               <div className="flex items-center gap-2">
-                <button type="submit" disabled={parsing || submitting} onClick={() => { submitActionRef.current = 'draft' }} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-sand bg-white font-sans text-sm font-medium text-ink hover:border-forest/40 hover:text-forest disabled:opacity-40">
+                <button type="submit" disabled={parsing || submitting || deleting} onClick={() => { submitActionRef.current = 'draft' }} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-sand bg-white font-sans text-sm font-medium text-ink hover:border-forest/40 hover:text-forest disabled:opacity-40">
                   {submitting && submitActionRef.current === 'draft' ? <><Loader2 size={14} className="animate-spin" /> Menyimpan…</> : <><FileText size={14} /> Simpan Perubahan</>}
                 </button>
-                <button type="submit" disabled={parsing || submitting} onClick={() => { submitActionRef.current = 'review' }} className="btn-primary flex items-center gap-2 disabled:opacity-40">
+                <button type="submit" disabled={parsing || submitting || deleting} onClick={() => { submitActionRef.current = 'review' }} className="btn-primary flex items-center gap-2 disabled:opacity-40">
                   {submitting && submitActionRef.current === 'review' ? <><Loader2 size={14} className="animate-spin" /> Mengajukan…</> : <><CheckCircle2 size={14} /> Ajukan untuk Ditinjau</>}
                 </button>
               </div>
@@ -493,6 +524,12 @@ export default function ArticleEditPage() {
           </form>
         </div>
       </main>
+      <ArticleDeleteModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={executeDelete}
+        isDeleting={deleting}
+      />
     </div>
   )
 }

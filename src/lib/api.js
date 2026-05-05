@@ -100,7 +100,7 @@ export const articlesApi = {
 
   deleteArticle: (id) => _authRequest(`/api/articles/${id}/`, { method: 'DELETE' }),
 
-  submit: (id) => _authRequest(`/api/articles/${id}/submit/`, { method: 'PATCH' }),
+  submit: (id) => _authRequest(`/api/articles/${id}/submit/`, { method: 'PATCH', body: JSON.stringify({}) }),
 }
 
 // ---------------------------------------------------------------------------

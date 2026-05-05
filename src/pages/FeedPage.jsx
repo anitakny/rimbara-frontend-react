@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Eye, MessageCircle, ArrowUpRight, Users } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
-import FeedProfileCard from '../components/ArtikelComponent/FeedProfileCard'
-import LeaderboardCard from '../components/ArtikelComponent/LeaderboardCard'
-import QuickActionCard from '../components/ArtikelComponent/QuickActionCard'
+import FeedProfileCard from '../components/FeedPage/FeedProfileCard'
+import LeaderboardCard from '../components/FeedPage/LeaderboardCard'
+import QuickActionCard from '../components/FeedPage/QuickActionCard'
 import { articlesApi, session } from '../lib/api'
 
 const CONTENT_TYPES = [

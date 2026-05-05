@@ -231,9 +231,9 @@ export default function ArticleDetailPage() {
               <div className="h-px w-6 bg-clay/50" />
               <h2 className="font-serif text-h3 font-semibold text-ink">Dokumen</h2>
             </div>
-            {article.pdf_url ? (
+            {article.pdf_url || article.original_file_url ? (
               <a 
-                href={article.pdf_url} 
+                href={article.pdf_url || article.original_file_url} 
                 target="_blank" 
                 rel="noreferrer"
                 className="flex items-center justify-between gap-4 bg-white border border-sand rounded-card p-5 hover:border-forest/40 hover:shadow-subtle transition-all duration-[240ms] group"
@@ -244,10 +244,10 @@ export default function ArticleDetailPage() {
                   </div>
                   <div>
                     <p className="font-sans text-sm font-medium text-ink group-hover:text-forest transition-colors">
-                      {article.pdf_url.split('/').pop() || 'Dokumen Artikel'}
+                      {(article.pdf_url || article.original_file_url).split('/').pop() || 'Dokumen Artikel'}
                     </p>
                     <p className="font-sans text-[0.65rem] text-ash uppercase tracking-widest mt-1">
-                      {article.original_file_type || 'PDF'} Document
+                      {article.pdf_url ? 'PDF' : article.original_file_type || 'PDF'} Document
                     </p>
                   </div>
                 </div>
@@ -258,8 +258,7 @@ export default function ArticleDetailPage() {
             ) : (
               <div className="bg-sand/20 border border-sand rounded-card p-6 flex flex-col items-center justify-center text-center">
                 <FileText size={24} className="text-ash/40 mb-3" />
-                <p className="font-sans text-sm font-medium text-ink mb-1">File tidak tersedia</p>
-                <p className="font-sans text-caption text-ash">Dokumen asli belum diunggah atau masih diproses.</p>
+                <p className="font-sans text-sm font-medium text-ink mb-1">Dokumen sedang diproses</p>
               </div>
             )}
           </section>

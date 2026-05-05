@@ -3,6 +3,7 @@ import { Upload, X, Plus, UserRound, FileText, AlertCircle, CheckCircle2, Loader
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import { articlesApi, profilesApi, session } from '../../lib/api'
+import ArticleFailedToDraft from '../../components/ArticlePage/ArticleFailedToDraft'
 
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
@@ -349,6 +350,9 @@ export default function ArticleUploadPage() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [serverError, setServerError] = useState('')
   const [parseError, setParseError]   = useState('')
+  
+  const [failedDraftId, setFailedDraftId] = useState(null)
+  const [failedDraftError, setFailedDraftError] = useState('')
 
   const fileInputRef = useRef(null)
 
@@ -430,9 +434,10 @@ export default function ArticleUploadPage() {
 
     if (ok) {
       if (submitActionRef.current === 'review') {
-        const submitRes = await articlesApi.submit(data.id)
+        const submitRes = await articlesApi.submit(data.article.id)
         if (!submitRes.ok) {
-          setServerError(submitRes.data?.error || submitRes.data?.detail || 'Gagal mengajukan artikel. Tersimpan sebagai draf.')
+          setFailedDraftError(submitRes.data?.error || submitRes.data?.detail || 'Gagal mengajukan artikel. Tersimpan sebagai draf.')
+          setFailedDraftId(data.article.id)
           setSubmitting(false)
           return
         }
@@ -738,6 +743,12 @@ export default function ArticleUploadPage() {
           </form>
         </div>
       </main>
+
+      <ArticleFailedToDraft 
+        isOpen={!!failedDraftId} 
+        errorMsg={failedDraftError} 
+        draftId={failedDraftId} 
+      />
     </div>
   )
 }
