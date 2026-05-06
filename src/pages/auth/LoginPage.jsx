@@ -35,7 +35,12 @@ export default function LoginPage() {
       session.save(data.tokens.access, data.tokens.refresh, data.user)
       navigate(data.user.is_profile_complete ? '/home' : '/activate')
     } else if (status === 403 && data.email_verified === false) {
-      setEmailNotVerified(true)
+      if (session.getAccess()) {
+        // Tokens from an earlier registration still exist — go straight to activation
+        navigate('/activate', { replace: true })
+      } else {
+        setEmailNotVerified(true)
+      }
     } else {
       setError(data.error || 'Terjadi kesalahan. Coba lagi.')
     }
@@ -114,9 +119,18 @@ export default function LoginPage() {
           {emailNotVerified && (
             <div className="flex items-start gap-3 bg-forest/8 border border-forest/20 rounded-lg px-4 py-3 mb-5">
               <MailCheck size={16} className="text-forest flex-shrink-0 mt-0.5" />
-              <p className="font-sans text-caption text-forest leading-relaxed">
-                Email Anda belum diverifikasi. Silakan cek inbox atau folder spam Anda.
-              </p>
+              <div>
+                <p className="font-sans text-caption text-forest leading-relaxed mb-1">
+                  Email Anda belum diverifikasi. Daftar ulang untuk mendapatkan kode baru.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate('/register')}
+                  className="font-sans text-caption text-forest underline underline-offset-4 hover:text-clay transition-colors duration-[240ms]"
+                >
+                  Daftar ulang →
+                </button>
+              </div>
             </div>
           )}
 

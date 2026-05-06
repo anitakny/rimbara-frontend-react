@@ -94,6 +94,22 @@ export const authApi = {
 }
 
 // ---------------------------------------------------------------------------
+// Home feed endpoints
+// ---------------------------------------------------------------------------
+
+export const homeApi = {
+  // Returns [{article, relevance_score, recommendation_reason}]
+  feed: ({ limit = 20, content_type = '' } = {}) => {
+    const qs = new URLSearchParams({ limit })
+    if (content_type) qs.append('content_type', content_type)
+    return _authRequest(`/api/home/feed/?${qs}`)
+  },
+
+  // Aggregate: profile card + top articles + leaderboards
+  aggregate: () => _authRequest('/api/home/'),
+}
+
+// ---------------------------------------------------------------------------
 // Articles endpoints
 // ---------------------------------------------------------------------------
 

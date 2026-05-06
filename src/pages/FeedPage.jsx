@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar'
 import FeedProfileCard from '../components/FeedPage/FeedProfileCard'
 import LeaderboardCard from '../components/FeedPage/LeaderboardCard'
 import QuickActionCard from '../components/FeedPage/QuickActionCard'
-import { articlesApi, session } from '../lib/api'
+import { articlesApi, homeApi, session } from '../lib/api'
 
 const CONTENT_TYPES = [
   { value: '',         label: 'Semua' },
@@ -85,6 +85,16 @@ function ArticleCard({ article, onClick }) {
             {typeLabel}
           </span>
         </div>
+
+        {/* Recommendation reason — only on personalized feed */}
+        {article.recommendation_reason && (
+          <div className="flex items-center gap-1.5 mb-3 -mt-1">
+            <div className="w-1 h-1 rounded-full bg-moss flex-shrink-0" />
+            <span className="font-sans text-[0.65rem] text-moss/70 italic">
+              {article.recommendation_reason}
+            </span>
+          </div>
+        )}
 
         {/* Thumbnail — between author and title; gradient fallback when no image */}
         <div className="w-full aspect-[16/9] overflow-hidden rounded-lg mb-4 flex-shrink-0">
@@ -187,9 +197,18 @@ export default function FeedPage() {
 
   const loadFeed = async (contentType) => {
     setLoading(true)
-    const { ok, data } = await articlesApi.feed(contentType)
+    // Default "Semua" tab uses personalized homeApi feed (includes recommendation_reason).
+    // Filtered tabs fall back to articlesApi to keep content-type filtering working.
+    const { ok, data } = contentType
+      ? await articlesApi.feed(contentType)
+      : await homeApi.feed()
     if (ok) {
-      setArticles(Array.isArray(data) ? data : (data.results ?? []))
+      const raw = Array.isArray(data) ? data : (data.results ?? [])
+      // homeApi returns [{article, recommendation_reason, relevance_score}]
+      // articlesApi returns articles directly — handle both
+      setArticles(raw.map(item =>
+        item.article ? { ...item.article, recommendation_reason: item.recommendation_reason } : item
+      ))
     }
     setLoading(false)
   }
