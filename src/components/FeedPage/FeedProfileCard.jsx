@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, Settings, FolderOpen } from 'lucide-react'
+import { ArrowUpRight, Settings, FolderOpen, ShieldCheck } from 'lucide-react'
 import { session } from '../../lib/api'
+
+const ADMIN_URL = `${import.meta.env.VITE_API_URL}/4Dm1n_d4Shb04Rd/`
 
 const roleLabels = {
   MAHASISWA:   'Mahasiswa',
@@ -9,6 +11,7 @@ const roleLabels = {
   AKTIVIS:     'Aktivis',
   MODERATOR:   'Moderator',
   ADMIN:       'Admin',
+  REVIEWER:    'Reviewer',
 }
 
 function getInitials(name) {
@@ -21,6 +24,7 @@ function getInitials(name) {
 export default function FeedProfileCard() {
   const user = session.getUser()
   const initials = getInitials(user?.full_name)
+  const isAdmin = user?.role === 'ADMIN' || user?.is_staff || user?.is_superuser
 
   return (
     <div className="bg-white rounded-card border border-sand shadow-subtle overflow-hidden">
@@ -84,6 +88,18 @@ export default function FeedProfileCard() {
             Pengaturan
             <Settings size={13} className="text-ash/50 group-hover:text-forest transition-colors duration-[240ms]" />
           </Link>
+          {isAdmin && (
+            <a
+              href={ADMIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between py-1.5 px-2 rounded-lg font-sans text-sm
+                text-ash hover:bg-sand/40 transition-all duration-[240ms] group"
+            >
+              Dashboard Admin
+              <ShieldCheck size={13} className="text-ash/50 group-hover:text-ash transition-colors duration-[240ms]" />
+            </a>
+          )}
         </div>
       </div>
     </div>
