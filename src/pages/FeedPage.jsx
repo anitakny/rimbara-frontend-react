@@ -45,31 +45,20 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-function ArticleCard({ article }) {
+function ArticleCard({ article, onClick }) {
   const { author } = article
   const style = typeStyle[article.content_type] ?? typeStyle['ARTIKEL']
   const typeLabel = CONTENT_TYPES.find((t) => t.value === article.content_type)?.label ?? article.content_type
   const initials = getInitials(author?.full_name)
 
   return (
-    <article className="bg-white rounded-card border border-sand shadow-subtle overflow-hidden
-      hover:shadow-elevated transition-shadow duration-[240ms] group cursor-pointer">
-
-      {/* Thumbnail or thin clay accent line */}
-      {article.thumbnail_url ? (
-        <div className="w-full aspect-[16/7] overflow-hidden">
-          <img
-            src={article.thumbnail_url}
-            alt={article.title}
-            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-[400ms]"
-          />
-        </div>
-      ) : (
-        <div className="h-0.5 bg-gradient-to-r from-clay/60 via-clay/20 to-transparent" />
-      )}
+    <article
+      onClick={onClick}
+      className="bg-white rounded-card border border-sand shadow-subtle overflow-hidden
+        hover:shadow-elevated transition-shadow duration-[240ms] group cursor-pointer">
 
       <div className="p-5 md:p-6">
-        {/* Author row — compact */}
+        {/* Author row — content type badge far right */}
         <div className="flex items-center gap-2.5 mb-4">
           {author?.photo_url ? (
             <img
@@ -82,7 +71,7 @@ function ArticleCard({ article }) {
               <span className="font-serif font-semibold text-[0.65rem] text-forest leading-none">{initials}</span>
             </div>
           )}
-          <div className="min-w-0">
+          <div className="flex-1 min-w-0">
             <p className="font-sans text-xs font-medium text-ink leading-snug truncate">
               {author?.full_name}
             </p>
@@ -92,14 +81,25 @@ function ArticleCard({ article }) {
               {timeAgo(article.published_at ?? article.created_at)}
             </p>
           </div>
-        </div>
-
-        {/* Content type pre-label */}
-        <div className="flex items-center gap-3 mb-2">
-          <div className="h-px w-6 bg-clay/40" />
-          <span className={`tag text-[0.65rem] py-0.5 ${style.bg} ${style.text} border ${style.border}`}>
+          <span className={`tag text-[0.65rem] py-0.5 flex-shrink-0 ${style.bg} ${style.text} border ${style.border}`}>
             {typeLabel}
           </span>
+        </div>
+
+        {/* Thumbnail — between author and title; gradient fallback when no image */}
+        <div className="w-full aspect-[16/9] overflow-hidden rounded-lg mb-4 flex-shrink-0">
+          {article.thumbnail_url ? (
+            <img
+              src={article.thumbnail_url}
+              alt={article.title}
+              className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-[400ms]"
+            />
+          ) : (
+            <div
+              className="w-full h-full"
+              style={{ background: 'linear-gradient(160deg, #1F3B2D 0%, #2A4F3C 55%, #162A20 100%)' }}
+            />
+          )}
         </div>
 
         {/* Title — large serif */}
@@ -154,6 +154,7 @@ function CardSkeleton() {
         </div>
         <div className="h-5 w-16 bg-sand rounded-full" />
       </div>
+      <div className="w-full aspect-[16/9] bg-sand rounded-lg mb-4" />
       <div className="h-5 bg-sand rounded w-4/5 mb-2" />
       <div className="h-5 bg-sand rounded w-3/5 mb-4" />
       <div className="flex flex-col gap-2 mb-5">
@@ -230,12 +231,12 @@ export default function FeedPage() {
               </div>
 
               {/* Content type filter */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-6 -mx-1 px-1">
+              <div className="flex flex-wrap items-center gap-2 mb-6">
                 {CONTENT_TYPES.map((type) => (
                   <button
                     key={type.value}
                     onClick={() => handleFilter(type.value)}
-                    className={`flex-shrink-0 font-sans text-sm font-medium px-4 py-1.5 rounded-full border
+                    className={`font-sans text-sm font-medium px-4 py-1.5 rounded-full border
                       transition-all duration-[240ms] ${
                         activeType === type.value
                           ? 'bg-forest text-bone border-forest'
@@ -262,7 +263,11 @@ export default function FeedPage() {
                   </div>
                 ) : (
                   articles.map((article) => (
-                    <ArticleCard key={article.id} article={article} />
+                    <ArticleCard
+                      key={article.id}
+                      article={article}
+                      onClick={() => navigate(`/articles/${article.id}`)}
+                    />
                   ))
                 )}
               </div>

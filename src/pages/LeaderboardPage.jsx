@@ -185,11 +185,13 @@ function RankRow({ entry, onClick }) {
 function Skeleton() {
   return (
     <div className="animate-pulse">
-      <div className="grid grid-cols-3 gap-4 mb-8 items-end">
+      {/* Podium skeleton — desktop only */}
+      <div className="hidden md:grid md:grid-cols-3 gap-4 mb-8 items-end">
         {[0, 1, 2].map((i) => (
           <div key={i} className={`bg-sand/30 rounded-card ${i === 1 ? 'h-72 -mt-5' : 'h-60'}`} />
         ))}
       </div>
+      {/* Row skeleton — always visible */}
       <div className="bg-white rounded-card border border-sand px-4 py-2">
         {Array.from({ length: 7 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 py-4 border-b border-sand/40 last:border-0">
@@ -341,33 +343,40 @@ export default function LeaderboardPage() {
           {/* Main content */}
           {loading ? (
             <Skeleton />
+          ) : results.length === 0 ? (
+            <div className="bg-white rounded-card border border-sand px-8 py-16 text-center">
+              <Trophy size={36} className="text-ash/30 mx-auto mb-4" />
+              <p className="font-serif text-h3 font-semibold text-ink mb-2">Belum ada data leaderboard</p>
+              <p className="font-sans text-body text-ash">
+                Leaderboard akan muncul setelah ada artikel yang diterbitkan.
+              </p>
+            </div>
           ) : (
             <>
-              {podiumOrder.length > 0 && (
-                <div className="grid grid-cols-3 gap-4 mb-8 items-end">
-                  {podiumOrder.map(entry => (
-                    <PodiumCard key={entry.rank} entry={entry} onClick={() => goToProfile(entry)} />
-                  ))}
-                </div>
-              )}
+              {/* Mobile: all results as ranked rows */}
+              <div className="md:hidden bg-white rounded-card border border-sand shadow-subtle px-4 py-2">
+                {results.map(entry => (
+                  <RankRow key={entry.rank} entry={entry} onClick={() => goToProfile(entry)} />
+                ))}
+              </div>
 
-              {rest.length > 0 && (
-                <div className="bg-white rounded-card border border-sand shadow-subtle px-4 md:px-6 py-2">
-                  {rest.map(entry => (
-                    <RankRow key={entry.rank} entry={entry} onClick={() => goToProfile(entry)} />
-                  ))}
-                </div>
-              )}
-
-              {results.length === 0 && (
-                <div className="bg-white rounded-card border border-sand px-8 py-16 text-center">
-                  <Trophy size={36} className="text-ash/30 mx-auto mb-4" />
-                  <p className="font-serif text-h3 font-semibold text-ink mb-2">Belum ada data leaderboard</p>
-                  <p className="font-sans text-body text-ash">
-                    Leaderboard akan muncul setelah ada artikel yang diterbitkan.
-                  </p>
-                </div>
-              )}
+              {/* Desktop: podium for top 3 + rows for 4+ */}
+              <div className="hidden md:block">
+                {podiumOrder.length > 0 && (
+                  <div className="grid grid-cols-3 gap-4 mb-8 items-end">
+                    {podiumOrder.map(entry => (
+                      <PodiumCard key={entry.rank} entry={entry} onClick={() => goToProfile(entry)} />
+                    ))}
+                  </div>
+                )}
+                {rest.length > 0 && (
+                  <div className="bg-white rounded-card border border-sand shadow-subtle px-6 py-2">
+                    {rest.map(entry => (
+                      <RankRow key={entry.rank} entry={entry} onClick={() => goToProfile(entry)} />
+                    ))}
+                  </div>
+                )}
+              </div>
             </>
           )}
 

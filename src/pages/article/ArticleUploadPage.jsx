@@ -7,13 +7,10 @@ import ArticleFailedToDraft from '../../components/ArticlePage/ArticleFailedToDr
 
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
-import * as mammothNs from 'mammoth'
+import mammoth from 'mammoth'
 
 // Vite bundles the worker from node_modules — no CDN, no version mismatch
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl
-
-// mammoth may expose API on .default (ESM interop) or directly (CJS)
-const mammoth = mammothNs.default ?? mammothNs
 
 // UUID validation regex
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -702,63 +699,50 @@ export default function ArticleUploadPage() {
               </div>
 
             {/* ── Submit ───────────────────────────────────────── */}
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-2">
+              {/* Primary action */}
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                onClick={() => { submitActionRef.current = 'review' }}
+                className="btn-primary w-full flex items-center justify-center gap-2
+                  disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {submitting && submitActionRef.current === 'review' ? (
+                  <><Loader2 size={14} className="animate-spin" />Mengajukan…</>
+                ) : parsing ? (
+                  <><Loader2 size={14} className="animate-spin" />Menganalisis…</>
+                ) : (
+                  <><CheckCircle2 size={14} />Ajukan untuk Ditinjau</>
+                )}
+              </button>
+
+              {/* Secondary action */}
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                onClick={() => { submitActionRef.current = 'draft' }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
+                  border border-sand bg-white font-sans text-sm font-medium text-ink
+                  hover:border-forest/40 hover:text-forest
+                  transition-all duration-[240ms] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {submitting && submitActionRef.current === 'draft' ? (
+                  <><Loader2 size={14} className="animate-spin" />Menyimpan…</>
+                ) : (
+                  <><FileText size={14} />Simpan sebagai Draf</>
+                )}
+              </button>
+
+              {/* Cancel */}
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="font-sans text-sm text-ash hover:text-ink transition-colors duration-[240ms] flex-shrink-0"
+                className="w-full py-2 font-sans text-sm text-ash hover:text-ink
+                  transition-colors duration-[240ms] text-center"
               >
                 Batal
               </button>
-
-              <div className="flex items-center gap-2">
-                {/* Save as Draft */}
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  onClick={() => { submitActionRef.current = 'draft' }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-sand bg-white
-                    font-sans text-sm font-medium text-ink hover:border-forest/40 hover:text-forest
-                    transition-all duration-[240ms] disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {submitting && submitActionRef.current === 'draft' ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      Menyimpan…
-                    </>
-                  ) : (
-                    <>
-                      <FileText size={14} />
-                      Simpan sebagai Draf
-                    </>
-                  )}
-                </button>
-
-                {/* Submit for review */}
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  onClick={() => { submitActionRef.current = 'review' }}
-                  className="btn-primary flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {submitting && submitActionRef.current === 'review' ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      Mengajukan…
-                    </>
-                  ) : parsing ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      Menganalisis…
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 size={14} />
-                      Ajukan untuk Ditinjau
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
 
           </form>

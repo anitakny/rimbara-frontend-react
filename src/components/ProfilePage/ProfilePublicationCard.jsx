@@ -1,100 +1,70 @@
-import { Bookmark, ArrowUpRight, Share2 } from 'lucide-react'
+import { ArrowUpRight, Eye, MessageCircle } from 'lucide-react'
 
-const typeConfig = {
-  'E-zine Kehati':      { action: 'Baca E-zine' },
-  'Story Map':          { action: 'Lihat Peta' },
-  'Etnografi Vignette': { action: 'Baca Vignette' },
-  'Opinion Editorial':  { action: 'Baca Editorial' },
+const TYPE_STYLE = {
+  ARTIKEL:  { bg: 'bg-forest/10', text: 'text-forest', border: 'border-forest/20', label: 'Artikel'  },
+  OPINION:  { bg: 'bg-clay/10',   text: 'text-clay',   border: 'border-clay/20',   label: 'Opini'    },
+  VIGNETTE: { bg: 'bg-sienna/10', text: 'text-sienna', border: 'border-sienna/20', label: 'Vignette' },
+  CERITA:   { bg: 'bg-moss/10',   text: 'text-moss',   border: 'border-moss/20',   label: 'Cerita'   },
 }
 
-const fallback = { action: 'Baca Selengkapnya' }
-
-export default function ProfilePublicationCard({ publication }) {
-  const {
-    type,
-    title,
-    author,
-    community,
-    year,
-    excerpt,
-    tags = [],
-    isBookmarked = false,
-  } = publication
-
-  const config = typeConfig[type] ?? fallback
+export default function ProfilePublicationCard({ article, onClick }) {
+  const s = TYPE_STYLE[article.content_type] ?? TYPE_STYLE['ARTIKEL']
 
   return (
-    <article className="bg-white border border-sand rounded-card p-5 flex flex-col gap-4 group
-      hover:shadow-subtle transition-all duration-[240ms]">
-
-      {/* Top row — type label + bookmark */}
-      <div className="flex items-center justify-between gap-3">
-        <span className="font-sans text-[0.65rem] uppercase tracking-widest text-ash/70 font-medium">
-          {type}
-        </span>
-        <button
-          type="button"
-          aria-label="Simpan"
-          className="p-1 rounded text-ash/40 hover:text-forest transition-colors duration-[240ms] flex-shrink-0"
-        >
-          <Bookmark
-            size={14}
-            className={isBookmarked ? 'fill-forest text-forest' : ''}
+    <article
+      onClick={onClick}
+      className="bg-white rounded-card border border-sand shadow-subtle overflow-hidden
+        hover:shadow-elevated transition-shadow duration-[240ms] cursor-pointer group flex flex-col"
+    >
+      {/* Thumbnail */}
+      <div className="aspect-[16/9] overflow-hidden flex-shrink-0">
+        {article.thumbnail_url ? (
+          <img
+            src={article.thumbnail_url}
+            alt={article.title}
+            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[400ms]"
           />
-        </button>
+        ) : (
+          <div
+            className="w-full h-full"
+            style={{ background: 'linear-gradient(160deg, #1F3B2D 0%, #2A4F3C 55%, #162A20 100%)' }}
+          />
+        )}
       </div>
 
-      {/* Title */}
-      <h3 className="font-serif text-h3 font-semibold text-ink leading-snug line-clamp-2
-        group-hover:text-forest transition-colors duration-[240ms] cursor-pointer">
-        {title}
-      </h3>
+      {/* Content */}
+      <div className="p-4 flex flex-col flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-px w-4 bg-clay/40 flex-shrink-0" />
+          <span className={`tag text-[0.6rem] py-0.5 ${s.bg} ${s.text} border ${s.border}`}>{s.label}</span>
+        </div>
 
-      {/* Meta */}
-      <p className="font-sans text-caption text-ash -mt-1">
-        {author}
-        {community && <> · {community}</>}
-        {' · '}
-        <span className="font-tabular">{year}</span>
-      </p>
+        <h3 className="font-serif text-h3 font-semibold text-ink leading-snug line-clamp-2
+          group-hover:text-forest transition-colors duration-[240ms] mb-2">
+          {article.title}
+        </h3>
 
-      {/* Tags */}
-      <div className="flex flex-wrap gap-1.5">
-        {tags.map((tag) => (
-          <span
-            key={tag}
-            className="font-sans text-[0.65rem] px-2.5 py-1 rounded-full
-              bg-sand/40 text-ash border border-sand font-medium"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
+        {article.abstract && (
+          <p className="font-accent italic text-caption text-ash/80 leading-relaxed line-clamp-2 mb-3">
+            {article.abstract}
+          </p>
+        )}
 
-      {/* Excerpt box */}
-      <div className="rounded-lg p-3 flex-1">
-        <p className="font-sans text-caption text-ash/80 leading-relaxed line-clamp-3">
-          {excerpt}
-        </p>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-sand">
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 font-sans text-sm font-medium
-            text-forest hover:text-clay transition-colors duration-[240ms]"
-        >
-          {config.action}
-          <ArrowUpRight size={14} />
-        </button>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="Bagikan"
-            className="p-1.5 rounded text-ash/40 hover:text-forest transition-colors duration-[240ms]"
-          >
-            <Share2 size={14} />
+        <div className="mt-auto pt-3 border-t border-sand flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1 font-sans text-caption text-ash">
+              <Eye size={11} className="flex-shrink-0" />
+              {(article.views_count ?? 0).toLocaleString('id-ID')}
+            </span>
+            <span className="flex items-center gap-1 font-sans text-caption text-ash">
+              <MessageCircle size={11} className="flex-shrink-0" />
+              {article.comments_count ?? 0}
+            </span>
+          </div>
+          <button className="inline-flex items-center gap-0.5 font-sans text-xs font-medium
+            text-forest group-hover:text-clay transition-colors duration-[240ms] flex-shrink-0">
+            Baca
+            <ArrowUpRight size={12} />
           </button>
         </div>
       </div>
