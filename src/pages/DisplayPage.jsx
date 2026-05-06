@@ -4,6 +4,10 @@ import { useNavigate, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { etalaseApi, session } from '../lib/api'
+import FlipbookViewer from '../components/FlipbookViewer'
+import samplePdfUrl from '../components/ZINE KEHATI MALINAU.pdf?url'
+
+export { samplePdfUrl }
 
 const BATIK = `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23F5EFE3' fill-opacity='1'%3E%3Cpath d='M30 30l-8-8 8-8 8 8-8 8zm0-16l-8-8 8-8 8 8-8 8zm0 32l-8-8 8-8 8 8-8 8zM14 30l-8-8 8-8 8 8-8 8zm32 0l-8-8 8-8 8 8-8 8z'/%3E%3C/g%3E%3C/svg%3E")`
 
@@ -61,10 +65,11 @@ export const MOCK_PUBLICATIONS = [
 // ---------------------------------------------------------------------------
 // Card
 // ---------------------------------------------------------------------------
-export function DisplayCard({ item }) {
+export function DisplayCard({ item, onBaca }) {
   const style    = typeStyle[item.pub_type] ?? typeStyle['LAINNYA']
   const catLabel = CATEGORIES.find(c => c.id === item.pub_type)?.label ?? item.pub_type
   const CatIcon  = CATEGORIES.find(c => c.id === item.pub_type)?.icon ?? BookOpen
+  const canBaca  = item.pub_type === 'EZINE_KEHATI' || item.pub_type === 'EZINE_ETNOGRAFI'
 
   return (
     <article className="group bg-white rounded-card border border-sand shadow-subtle
@@ -118,8 +123,13 @@ export function DisplayCard({ item }) {
               {(item.downloads_count ?? 0).toLocaleString('id-ID')}
             </span>
           </div>
-          <button className="inline-flex items-center gap-1 font-sans text-sm font-medium
-            text-forest hover:text-clay transition-colors duration-[240ms] flex-shrink-0">
+          <button
+            onClick={() => canBaca && onBaca?.(item)}
+            className={`inline-flex items-center gap-1 font-sans text-sm font-medium
+              transition-colors duration-[240ms] flex-shrink-0 ${
+                canBaca ? 'text-forest hover:text-clay cursor-pointer' : 'text-ash/30 cursor-default'
+              }`}
+          >
             Baca
             <ArrowUpRight size={14} />
           </button>
@@ -156,7 +166,7 @@ export function CardSkeleton() {
 // ---------------------------------------------------------------------------
 const MAX_PER_ROW = 9
 
-function DisplayRow({ category, loading }) {
+function DisplayRow({ category, loading, onBaca }) {
   const [startIndex, setStartIndex] = useState(0)
   const itemsPerPage = 3
 
@@ -217,7 +227,7 @@ function DisplayRow({ category, loading }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {loading
           ? Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)
-          : currentItems.map((item) => <DisplayCard key={item.id} item={item} />)
+          : currentItems.map((item) => <DisplayCard key={item.id} item={item} onBaca={onBaca} />)
         }
       </div>
 
@@ -247,6 +257,10 @@ export default function DisplayPage() {
   const [publications, setPublications] = useState(MOCK_PUBLICATIONS)
   const [loading, setLoading]           = useState(false)
   const [yearFilter, setYearFilter]     = useState('')
+  const [flipItem, setFlipItem]         = useState(null)
+
+  const handleBaca = (item) =>
+    setFlipItem({ ...item, pdf_url: item.pdf_url ?? samplePdfUrl })
 
   useEffect(() => {
     if (!session.getAccess()) {
@@ -335,7 +349,7 @@ export default function DisplayPage() {
 
           {/* Category rows */}
           {categoriesWithData.map((cat) => (
-            <DisplayRow key={cat.id} category={cat} loading={loading} />
+            <DisplayRow key={cat.id} category={cat} loading={loading} onBaca={handleBaca} />
           ))}
 
           {/* Empty state */}
@@ -352,6 +366,10 @@ export default function DisplayPage() {
       </main>
 
       <Footer />
+
+      {flipItem && (
+        <FlipbookViewer item={flipItem} onClose={() => setFlipItem(null)} />
+      )}
     </div>
   )
 }
