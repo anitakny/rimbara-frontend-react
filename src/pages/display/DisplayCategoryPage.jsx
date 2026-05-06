@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar } from 'lucide-react'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
-import { etalaseApi, session } from '../lib/api'
-import { MOCK_PUBLICATIONS, CATEGORIES, DisplayCard, CardSkeleton } from './DisplayPage'
+import { ArrowLeft, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import Navbar from '../../components/Navbar'
+import Footer from '../../components/Footer'
+import { etalaseApi, session } from '../../lib/api'
+import { MOCK_PUBLICATIONS, CATEGORIES, DisplayCard, CardSkeleton } from '../DisplayPage'
 
 const BATIK = `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23F5EFE3' fill-opacity='1'%3E%3Cpath d='M30 30l-8-8 8-8 8 8-8 8zm0-16l-8-8 8-8 8 8-8 8zm0 32l-8-8 8-8 8 8-8 8zM14 30l-8-8 8-8 8 8-8 8zm32 0l-8-8 8-8 8 8-8 8z'/%3E%3C/g%3E%3C/svg%3E")`
 
@@ -19,6 +19,7 @@ export default function DisplayCategoryPage() {
   )
   const [loading, setLoading]       = useState(false)
   const [yearFilter, setYearFilter] = useState('')
+  const [page, setPage]             = useState(1)
 
   useEffect(() => {
     if (!session.getAccess()) {
@@ -46,7 +47,14 @@ export default function DisplayCategoryPage() {
     ? publications.filter(p => String(p.year) === String(yearFilter))
     : publications
 
+  const ITEMS_PER_PAGE = 9
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+  const safePage   = Math.min(page, totalPages)
+  const pageItems  = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+
   const years = [...new Set(publications.map(p => p.year))].sort((a, b) => b - a)
+
+  const handleYearChange = (y) => { setYearFilter(y); setPage(1) }
 
   return (
     <div className="min-h-screen bg-bone">
@@ -102,7 +110,7 @@ export default function DisplayCategoryPage() {
               <Calendar size={13} className="text-forest flex-shrink-0" />
               <select
                 value={yearFilter}
-                onChange={(e) => setYearFilter(e.target.value)}
+                onChange={(e) => handleYearChange(e.target.value)}
                 className="bg-transparent font-sans text-sm text-ink outline-none cursor-pointer"
               >
                 <option value="">Semua Tahun</option>
@@ -122,13 +130,52 @@ export default function DisplayCategoryPage() {
             )}
           </div>
 
-          {/* Grid — all items, no cap */}
+          {/* Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {loading
-              ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
-              : filtered.map((item) => <DisplayCard key={item.id} item={item} />)
+              ? Array.from({ length: 9 }).map((_, i) => <CardSkeleton key={i} />)
+              : pageItems.map((item) => <DisplayCard key={item.id} item={item} />)
             }
           </div>
+
+          {/* Pagination */}
+          {!loading && (
+            <div className="flex items-center justify-center gap-4 mt-10">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                className="p-2 rounded-lg border border-sand bg-white text-ash
+                  hover:text-forest hover:border-forest/40 disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all duration-[240ms]"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPage(i + 1)}
+                    className={`rounded-full transition-all duration-[240ms] ${
+                      safePage === i + 1
+                        ? 'w-5 h-1 bg-forest'
+                        : 'w-2 h-1 bg-sand hover:bg-ash/40'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                className="p-2 rounded-lg border border-sand bg-white text-ash
+                  hover:text-forest hover:border-forest/40 disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all duration-[240ms]"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
 
           {/* Empty state */}
           {!loading && filtered.length === 0 && (
