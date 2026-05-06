@@ -28,11 +28,16 @@ export default function FlipbookViewer({ item, onClose }) {
   const [error, setError]             = useState('')
   const [currentPage, setCurrentPage] = useState(0)
   const [zoom, setZoom]               = useState(1.0)
+  const [pageDims, setPageDims]       = useState(null)
   const bookRef = useRef()
 
   const isMobile = window.innerWidth < 768
-  const pageW    = isMobile ? Math.min(310, window.innerWidth - 48) : 370
-  const pageH    = Math.round(pageW * 1.4142)
+  // Max width for one page: half the viewport minus margins (two pages side by side on desktop)
+  const availW = isMobile
+    ? window.innerWidth - 48
+    : Math.floor((window.innerWidth - 140) / 2)
+  const pageW = pageDims ? Math.min(pageDims.w, availW) : availW
+  const pageH = pageDims ? Math.round(pageW * (pageDims.h / pageDims.w)) : Math.round(pageW * 1.4142)
 
   // Lock body scroll while open
   useEffect(() => {
@@ -52,6 +57,7 @@ export default function FlipbookViewer({ item, onClose }) {
     setError('')
     setCurrentPage(0)
     setZoom(1.0)
+    setPageDims(null)
     ;(async () => {
       try {
         const pdf  = await getDocument(item.pdf_url).promise
@@ -59,6 +65,7 @@ export default function FlipbookViewer({ item, onClose }) {
         for (let i = 1; i <= pdf.numPages; i++) {
           const pg     = await pdf.getPage(i)
           const vp     = pg.getViewport({ scale: 1.8 })
+          if (i === 1) setPageDims({ w: vp.width / 1.8, h: vp.height / 1.8 })
           const canvas = document.createElement('canvas')
           canvas.width  = vp.width
           canvas.height = vp.height
