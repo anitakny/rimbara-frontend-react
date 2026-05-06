@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, BookOpen, ArrowUpRight, Compass, FileText, Star, Calendar, Eye, Download } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen, ArrowUpRight, Compass, FileText, Star, Eye, Download } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -27,40 +27,6 @@ export const typeStyle = {
   LAINNYA:           { bg: 'bg-sand',       text: 'text-ash',     border: 'border-sand'      },
 }
 
-export const MOCK_PUBLICATIONS = [
-  // EZINE_KEHATI — 6 items
-  { id: 'm1',  pub_type: 'EZINE_KEHATI', title: 'Keanekaragaman Hayati Hutan Kalimantan Tengah', year: 2024, cover_url: null, views_count: 1240, downloads_count: 312 },
-  { id: 'm2',  pub_type: 'EZINE_KEHATI', title: 'Spesies Endemik Sulawesi: Tinjauan Terkini', year: 2024, cover_url: null, views_count: 890, downloads_count: 201 },
-  { id: 'm3',  pub_type: 'EZINE_KEHATI', title: 'Ekosistem Mangrove Pesisir Papua Barat', year: 2023, cover_url: null, views_count: 743, downloads_count: 187 },
-  { id: 'm4',  pub_type: 'EZINE_KEHATI', title: 'Burung Penanda Musim di Kepulauan Flores', year: 2023, cover_url: null, views_count: 621, downloads_count: 145 },
-  { id: 'm5',  pub_type: 'EZINE_KEHATI', title: 'Tanaman Obat Tradisional Dayak Ngaju', year: 2022, cover_url: null, views_count: 1102, downloads_count: 298 },
-  { id: 'm6',  pub_type: 'EZINE_KEHATI', title: 'Hutan Adat Kasepuhan: Konservasi Berbasis Komunitas', year: 2022, cover_url: null, views_count: 854, downloads_count: 220 },
-
-  // EZINE_ETNOGRAFI — 5 items
-  { id: 'm7',  pub_type: 'EZINE_ETNOGRAFI', title: 'Ritual Tani Suku Baduy Dalam: Dokumentasi Visual', year: 2024, cover_url: null, views_count: 2104, downloads_count: 487 },
-  { id: 'm8',  pub_type: 'EZINE_ETNOGRAFI', title: 'Tenun Tradisi: Narasi Perempuan Sumba', year: 2024, cover_url: null, views_count: 1560, downloads_count: 334 },
-  { id: 'm9',  pub_type: 'EZINE_ETNOGRAFI', title: 'Upacara Adat Aruh di Barito Tengah', year: 2023, cover_url: null, views_count: 987, downloads_count: 213 },
-  { id: 'm10', pub_type: 'EZINE_ETNOGRAFI', title: 'Arsitektur Rumah Adat Minangkabau', year: 2023, cover_url: null, views_count: 876, downloads_count: 189 },
-  { id: 'm11', pub_type: 'EZINE_ETNOGRAFI', title: "Pesta Panen Suku Toraja: Tradisi Ma'nene", year: 2022, cover_url: null, views_count: 1230, downloads_count: 267 },
-
-  // LAPORAN — 4 items
-  { id: 'm12', pub_type: 'LAPORAN', title: 'Laporan Tahunan Program Pemetaan Wilayah Adat 2024', year: 2024, cover_url: null, views_count: 432, downloads_count: 189 },
-  { id: 'm13', pub_type: 'LAPORAN', title: 'Evaluasi Program Pendampingan Komunitas Adat Terpencil', year: 2023, cover_url: null, views_count: 298, downloads_count: 134 },
-  { id: 'm14', pub_type: 'LAPORAN', title: 'Laporan Monitoring Deforestasi Kawasan Adat Kalimantan', year: 2023, cover_url: null, views_count: 651, downloads_count: 298 },
-  { id: 'm15', pub_type: 'LAPORAN', title: 'Rekomendasi Kebijakan Perlindungan Hutan Adat', year: 2022, cover_url: null, views_count: 543, downloads_count: 267 },
-
-  // OPINION_EDITORIAL — 5 items
-  { id: 'm16', pub_type: 'OPINION_EDITORIAL', title: 'Ketika Hukum Adat Bertemu Hukum Negara', year: 2024, cover_url: null, views_count: 3200, downloads_count: 543 },
-  { id: 'm17', pub_type: 'OPINION_EDITORIAL', title: 'Masyarakat Adat Bukan Objek Konservasi', year: 2024, cover_url: null, views_count: 2890, downloads_count: 489 },
-  { id: 'm18', pub_type: 'OPINION_EDITORIAL', title: 'FPIC dan Realitasnya di Lapangan', year: 2023, cover_url: null, views_count: 1234, downloads_count: 312 },
-  { id: 'm19', pub_type: 'OPINION_EDITORIAL', title: 'Kedaulatan Pangan dan Kearifan Lokal', year: 2023, cover_url: null, views_count: 987, downloads_count: 234 },
-  { id: 'm20', pub_type: 'OPINION_EDITORIAL', title: 'Mempertahankan Bahasa Daerah di Era Digital', year: 2022, cover_url: null, views_count: 1560, downloads_count: 387 },
-
-  // LAINNYA — 3 items
-  { id: 'm21', pub_type: 'LAINNYA', title: 'Panduan Dokumentasi Kearifan Lokal untuk Pemuda', year: 2024, cover_url: null, views_count: 321, downloads_count: 98 },
-  { id: 'm22', pub_type: 'LAINNYA', title: 'Modul Pelatihan Pemetaan Partisipatif', year: 2023, cover_url: null, views_count: 456, downloads_count: 134 },
-  { id: 'm23', pub_type: 'LAINNYA', title: 'Prosiding Seminar Hak-Hak Masyarakat Adat', year: 2022, cover_url: null, views_count: 287, downloads_count: 76 },
-]
 
 // ---------------------------------------------------------------------------
 // Card
@@ -254,9 +220,8 @@ function DisplayRow({ category, loading, onBaca }) {
 // ---------------------------------------------------------------------------
 export default function DisplayPage() {
   const navigate = useNavigate()
-  const [publications, setPublications] = useState(MOCK_PUBLICATIONS)
-  const [loading, setLoading]           = useState(false)
-  const [yearFilter, setYearFilter]     = useState('')
+  const [publications, setPublications] = useState([])
+  const [loading, setLoading]           = useState(true)
   const [flipItem, setFlipItem]         = useState(null)
 
   const handleBaca = (item) =>
@@ -274,24 +239,14 @@ export default function DisplayPage() {
   const load = async () => {
     setLoading(true)
     const { ok, data } = await etalaseApi.list({})
-    if (ok) {
-      const items = Array.isArray(data) ? data : (data.results ?? [])
-      if (items.length > 0) setPublications(items)
-    }
+    if (ok) setPublications(Array.isArray(data) ? data : (data.results ?? []))
     setLoading(false)
   }
 
-  // Client-side year filter works on both mock and real data
-  const filtered = yearFilter
-    ? publications.filter(p => String(p.year) === String(yearFilter))
-    : publications
-
   const categoriesWithData = CATEGORIES.map(cat => ({
     ...cat,
-    data: filtered.filter(p => p.pub_type === cat.id),
+    data: publications.filter(p => p.pub_type === cat.id),
   }))
-
-  const years = [...new Set(publications.map(p => p.year))].sort((a, b) => b - a)
 
   return (
     <div className="min-h-screen bg-bone">
@@ -340,7 +295,7 @@ export default function DisplayPage() {
             {!loading && (
               <div className="flex items-center gap-2 ml-auto">
                 <span className="font-serif text-h3 font-semibold text-forest font-tabular">
-                  {filtered.length}
+                  {publications.length}
                 </span>
                 <span className="font-sans font-bold text-caption text-ash">publikasi terkurasi</span>
               </div>
@@ -353,12 +308,10 @@ export default function DisplayPage() {
           ))}
 
           {/* Empty state */}
-          {!loading && filtered.length === 0 && (
+          {!loading && publications.length === 0 && (
             <div className="bg-white rounded-card border border-sand shadow-subtle px-8 py-16 text-center">
               <p className="font-serif text-h3 font-semibold text-ink mb-2">Belum ada publikasi</p>
-              <p className="font-sans text-body text-ash">
-                {yearFilter ? `Tidak ada publikasi untuk tahun ${yearFilter}.` : 'Publikasi akan muncul di sini setelah diunggah oleh admin.'}
-              </p>
+              <p className="font-sans text-body text-ash">Publikasi akan muncul di sini setelah diunggah oleh admin.</p>
             </div>
           )}
 

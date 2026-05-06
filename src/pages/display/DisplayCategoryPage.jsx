@@ -4,7 +4,7 @@ import { ArrowLeft, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import { etalaseApi, session } from '../../lib/api'
-import { MOCK_PUBLICATIONS, CATEGORIES, DisplayCard, CardSkeleton, samplePdfUrl } from '../DisplayPage'
+import { CATEGORIES, DisplayCard, CardSkeleton, samplePdfUrl } from '../DisplayPage'
 import FlipbookViewer from '../../components/FlipbookViewer'
 
 const BATIK = `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23F5EFE3' fill-opacity='1'%3E%3Cpath d='M30 30l-8-8 8-8 8 8-8 8zm0-16l-8-8 8-8 8 8-8 8zm0 32l-8-8 8-8 8 8-8 8zM14 30l-8-8 8-8 8 8-8 8zm32 0l-8-8 8-8 8 8-8 8z'/%3E%3C/g%3E%3C/svg%3E")`
@@ -15,10 +15,8 @@ export default function DisplayCategoryPage() {
 
   const category = CATEGORIES.find(c => c.id === pubType)
 
-  const [publications, setPublications] = useState(
-    MOCK_PUBLICATIONS.filter(p => p.pub_type === pubType)
-  )
-  const [loading, setLoading]       = useState(false)
+  const [publications, setPublications] = useState([])
+  const [loading, setLoading]           = useState(true)
   const [yearFilter, setYearFilter] = useState('')
   const [page, setPage]             = useState(1)
   const [flipItem, setFlipItem]     = useState(null)
@@ -38,10 +36,7 @@ export default function DisplayCategoryPage() {
     // Try to load real data; keep mock if API returns empty
     setLoading(true)
     etalaseApi.list({ pub_type: pubType }).then(({ ok, data }) => {
-      if (ok) {
-        const items = Array.isArray(data) ? data : (data.results ?? [])
-        if (items.length > 0) setPublications(items)
-      }
+      if (ok) setPublications(Array.isArray(data) ? data : (data.results ?? []))
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [pubType])
