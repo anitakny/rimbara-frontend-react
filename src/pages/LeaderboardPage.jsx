@@ -260,7 +260,7 @@ export default function LeaderboardPage() {
       <main className="pt-16">
 
         {/* ── Hero ──────────────────────────────────────────────────── */}
-        <section className="relative min-h-[38vh] flex flex-col justify-end overflow-hidden">
+        <section className="relative min-h-[42vh] flex flex-col justify-end overflow-hidden">
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-gradient-to-b from-forest/90 via-forest/70 to-ink/90 z-10" />
             <div
