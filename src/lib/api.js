@@ -146,3 +146,30 @@ export const profilesApi = {
   public: (userId) =>
     _request(`/api/profiles/${userId}/`),
 }
+
+// ---------------------------------------------------------------------------
+// Contributor / Leaderboard endpoints
+// ---------------------------------------------------------------------------
+
+export const contributorApi = {
+  leaderboard: ({ limit = 10 } = {}) =>
+    _authRequest(`/api/contributors/leaderboard/?limit=${limit}`),
+
+  leaderboardAllTime: ({ limit = 10 } = {}) =>
+    _authRequest(`/api/contributors/leaderboard/all-time/?limit=${limit}`),
+
+  leaderboardHistory: ({ month, year } = {}) => {
+    const qs = month && year ? `?month=${month}&year=${year}` : ''
+    return _authRequest(`/api/contributors/leaderboard/history/${qs}`)
+  },
+
+  list: ({ role_category = '', institution = '' } = {}) => {
+    const qs = new URLSearchParams()
+    if (role_category) qs.append('role_category', role_category)
+    if (institution)   qs.append('institution',   institution)
+    const q = qs.toString()
+    return _authRequest(`/api/contributors/${q ? `?${q}` : ''}`)
+  },
+
+  detail: (userId) => _authRequest(`/api/contributors/${userId}/`),
+}
