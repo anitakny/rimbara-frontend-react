@@ -76,6 +76,21 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ refresh }),
     }),
+
+  sendOtp: (email) =>
+    _request('/api/auth/send-otp/', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  verifyEmail: (email, code) =>
+    _request('/api/auth/verify-email/', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    }),
+
+  resendOtp: () =>
+    _authRequest('/api/auth/resend-otp/', { method: 'POST' }),
 }
 
 // ---------------------------------------------------------------------------
