@@ -1,0 +1,50 @@
+name: Sync dari Organization
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+jobs:
+  sync:
+    name: Pull dari Rimbara/rimbara-frontend-react
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.SYNC_TOKEN }}
+          fetch-depth: 0
+
+      - name: Sync dari upstream
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git remote add upstream https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/Rimbara/rimbara-frontend-react.git
+          git fetch upstream main
+
+          LOCAL=$(git rev-parse HEAD)
+          UPSTREAM=$(git rev-parse upstream/main)
+
+          if [ "$LOCAL" = "$UPSTREAM" ]; then
+            echo "✅ Sudah up-to-date, tidak ada yang perlu di-sync"
+            exit 0
+          fi
+
+          echo "🔄 Ada perubahan dari upstream, mulai sync..."
+
+          cp -r .github/workflows /tmp/fork-workflows
+          git reset --hard upstream/main
+          cp -r /tmp/fork-workflows/. .github/workflows/
+
+          git add .github/workflows/
+          if git diff --cached --quiet; then
+            echo "✅ Workflows fork tidak berubah"
+          else
+            git commit -m "ci: restore fork workflows after upstream sync"
+          fi
+
+          git push origin main --force
+          echo "✅ Sync selesai"
