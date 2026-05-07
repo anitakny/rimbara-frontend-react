@@ -127,11 +127,14 @@ export default function Navbar() {
                     hover:bg-sand/60 transition-all duration-[240ms]"
                   aria-label="User menu"
                 >
-                  <div className="w-8 h-8 rounded-full bg-forest flex items-center justify-center flex-shrink-0">
-                    <span className="font-serif font-semibold text-xs text-bone leading-none">
-                      {initials}
-                    </span>
-                  </div>
+                  {user?.photo_url ? (
+                    <img src={user.photo_url} alt={user.full_name}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-forest flex items-center justify-center flex-shrink-0">
+                      <span className="font-serif font-semibold text-xs text-bone leading-none">{initials}</span>
+                    </div>
+                  )}
                   <ChevronDown
                     size={14}
                     className={`text-ash flex-shrink-0 transition-transform duration-[240ms] ${
@@ -175,7 +178,6 @@ export default function Navbar() {
                           className="flex items-center gap-3 px-4 py-2.5 font-sans text-sm text-ink
                             hover:bg-sand/50 transition-colors duration-[240ms]"
                         >
-                          <ClipboardList size={15} className="text-ash flex-shrink-0" />
                           Review Artikel
                         </Link>
                       )}
@@ -186,7 +188,6 @@ export default function Navbar() {
                           className="flex items-center gap-3 px-4 py-2.5 font-sans text-sm text-ink
                             hover:bg-sand/50 transition-colors duration-[240ms]"
                         >
-                          <BookMarked size={15} className="text-ash flex-shrink-0" />
                           Manajemen Etalase
                         </Link>
                       )}
@@ -273,9 +274,14 @@ export default function Navbar() {
           {/* Row 2 — user info */}
           {user?.full_name && (
             <div className="px-6 py-4 border-b border-sand flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-forest flex items-center justify-center flex-shrink-0">
-                <span className="font-serif font-semibold text-sm text-bone leading-none">{initials}</span>
-              </div>
+              {user?.photo_url ? (
+                <img src={user.photo_url} alt={user.full_name}
+                  className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-forest flex items-center justify-center flex-shrink-0">
+                  <span className="font-serif font-semibold text-sm text-bone leading-none">{initials}</span>
+                </div>
+              )}
               <div className="min-w-0">
                 <p className="font-sans text-sm font-medium text-ink truncate">{user.full_name}</p>
                 <p className="font-sans text-caption text-ash truncate">{user.email}</p>
@@ -329,7 +335,6 @@ export default function Navbar() {
                 className="flex items-center gap-3 px-4 py-2.5 rounded-lg font-sans text-sm text-ink
                   hover:bg-sand/40 transition-colors duration-[240ms]"
               >
-                <ClipboardList size={15} className="text-ash flex-shrink-0" />
                 Review Artikel
               </Link>
             )}
@@ -340,7 +345,6 @@ export default function Navbar() {
                 className="flex items-center gap-3 px-4 py-2.5 rounded-lg font-sans text-sm text-ink
                   hover:bg-sand/40 transition-colors duration-[240ms]"
               >
-                <BookMarked size={15} className="text-ash flex-shrink-0" />
                 Manajemen Etalase
               </Link>
             )}

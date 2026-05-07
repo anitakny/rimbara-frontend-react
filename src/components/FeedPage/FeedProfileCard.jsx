@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, Settings, FolderOpen, ShieldCheck, ClipboardList, BookMarked } from 'lucide-react'
-import { session } from '../../lib/api'
+import { profilesApi, session } from '../../lib/api'
 
 const ADMIN_URL = `${import.meta.env.VITE_API_URL}/4Dm1n_d4Shb04Rd/`
 
@@ -22,24 +23,44 @@ function getInitials(name) {
 }
 
 export default function FeedProfileCard() {
-  const user = session.getUser()
+  const user    = session.getUser()
   const initials = getInitials(user?.full_name)
   const isAdmin          = user?.role === 'ADMIN' || user?.is_staff || user?.is_superuser
   const isReviewer       = user?.role === 'ADMIN' || user?.role === 'REVIEWER' || user?.is_staff || user?.is_superuser
   const isEtalaseManager = user?.role === 'ADMIN' || user?.role === 'MODERATOR' || user?.is_staff || user?.is_superuser
 
+  // Fetch fresh photo_url on mount; sync into session for Navbar + other components
+  const [photoUrl, setPhotoUrl] = useState(user?.photo_url ?? null)
+
+  useEffect(() => {
+    profilesApi.me().then(({ ok, data }) => {
+      if (ok && data.photo_url) {
+        setPhotoUrl(data.photo_url)
+        const u = session.getUser()
+        if (u?.photo_url !== data.photo_url) {
+          session.save(session.getAccess(), session.getRefresh(), { ...u, photo_url: data.photo_url })
+        }
+      }
+    }).catch(() => {})
+  }, [])
+
   return (
     <div className="bg-white rounded-card border border-sand shadow-subtle overflow-hidden">
 
       <div className="px-5 pb-5">
-        {/* Avatar overlapping header */}
+        {/* Avatar */}
         <div className="my-6">
-          <div className="w-16 h-16 rounded-full bg-forest border-2 border-white
-            flex items-center justify-center shadow-warm">
-            <span className="font-serif font-semibold text-sm text-bone leading-none">
-              {initials}
-            </span>
-          </div>
+          {photoUrl ? (
+            <img src={photoUrl} alt={user?.full_name}
+              className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-warm" />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-forest border-2 border-white
+              flex items-center justify-center shadow-warm">
+              <span className="font-serif font-semibold text-sm text-bone leading-none">
+                {initials}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Pre-label */}

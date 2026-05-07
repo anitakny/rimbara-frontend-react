@@ -202,6 +202,7 @@ export const etalaseApi = {
     return _authRequest(`/api/etalase/${q ? `?${q}` : ''}`)
   },
   detail: (id) => _authRequest(`/api/etalase/${id}/`),
+  download: (id) => _authRequest(`/api/etalase/${id}/download/`),
 
   // Admin-only (IsRIMBAHARIAdmin)
   create: (formData) => _authFetch('/api/etalase/', { method: 'POST', body: formData }),
@@ -236,6 +237,13 @@ export const profilesApi = {
   // GET /api/profiles/{user_id}/ — public, no auth required
   public: (userId) =>
     _request(`/api/profiles/${userId}/`),
+
+  // POST /api/profiles/me/photo/ — multipart, field name: photo, max 2MB, PNG/JPG/WebP
+  uploadPhoto: (file) => {
+    const fd = new FormData()
+    fd.append('photo', file)
+    return _authFetch('/api/profiles/me/photo/', { method: 'POST', body: fd })
+  },
 }
 
 // ---------------------------------------------------------------------------

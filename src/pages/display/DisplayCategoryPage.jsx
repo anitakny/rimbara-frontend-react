@@ -19,10 +19,15 @@ export default function DisplayCategoryPage() {
   const [loading, setLoading]           = useState(true)
   const [yearFilter, setYearFilter] = useState('')
   const [page, setPage]             = useState(1)
-  const [flipItem, setFlipItem]     = useState(null)
+  const [flipItem, setFlipItem]         = useState(null)
+  const [flipLoading, setFlipLoading]   = useState(null)
 
-  const handleBaca = (item) =>
-    setFlipItem(item)
+  const handleBaca = async (item) => {
+    setFlipLoading(item.id)
+    const { ok, data } = await etalaseApi.detail(item.id)
+    setFlipItem(ok ? data : item)
+    setFlipLoading(null)
+  }
 
   useEffect(() => {
     if (!session.getAccess()) {
@@ -134,7 +139,7 @@ export default function DisplayCategoryPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {loading
               ? Array.from({ length: 9 }).map((_, i) => <CardSkeleton key={i} />)
-              : pageItems.map((item) => <DisplayCard key={item.id} item={item} onBaca={handleBaca} />)
+              : pageItems.map((item) => <DisplayCard key={item.id} item={item} onBaca={handleBaca} loadingId={flipLoading} />)
             }
           </div>
 

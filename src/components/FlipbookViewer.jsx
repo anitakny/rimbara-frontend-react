@@ -29,6 +29,7 @@ export default function FlipbookViewer({ item, onClose }) {
   const [currentPage, setCurrentPage] = useState(0)
   const [zoom, setZoom]               = useState(1.0)
   const [pageDims, setPageDims]       = useState(null)
+  const [downloading, setDownloading] = useState(false)
   const bookRef = useRef()
 
   const isMobile = window.innerWidth < 768
@@ -47,7 +48,9 @@ export default function FlipbookViewer({ item, onClose }) {
 
   // Load PDF on item change
   useEffect(() => {
-    if (!item?.pdf_url) {
+    // Support both article pdf_url and etalase file_url field names
+    const pdfUrl = item?.pdf_url ?? item?.file_url
+    if (!pdfUrl) {
       setError('PDF tidak tersedia untuk publikasi ini.')
       setLoading(false)
       return
@@ -59,8 +62,16 @@ export default function FlipbookViewer({ item, onClose }) {
     setZoom(1.0)
     setPageDims(null)
     ;(async () => {
+      let blobUrl = null
       try {
-        const pdf  = await getDocument(item.pdf_url).promise
+        // Pre-fetch as blob — avoids pdfjs worker making a cross-origin request
+        // to Supabase Storage, which can fail in some browsers even on public buckets
+        const res = await fetch(pdfUrl)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const blob = await res.blob()
+        blobUrl = URL.createObjectURL(blob)
+
+        const pdf  = await getDocument(blobUrl).promise
         const imgs = []
         for (let i = 1; i <= pdf.numPages; i++) {
           const pg     = await pdf.getPage(i)
@@ -75,6 +86,8 @@ export default function FlipbookViewer({ item, onClose }) {
         setPages(imgs)
       } catch {
         setError('Gagal memuat PDF.')
+      } finally {
+        if (blobUrl) URL.revokeObjectURL(blobUrl)
       }
       setLoading(false)
     })()
@@ -98,14 +111,42 @@ export default function FlipbookViewer({ item, onClose }) {
   const zoomIn  = () => setZoom(z => Math.min(1.5, parseFloat((z + 0.1).toFixed(1))))
   const zoomOut = () => setZoom(z => Math.max(0.5, parseFloat((z - 0.1).toFixed(1))))
 
-  const handleDownload = () => {
-    if (!item?.pdf_url) return
-    const a = document.createElement('a')
-    a.href = item.pdf_url
-    a.download = `${item.title ?? 'dokumen'}.pdf`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+  const handleDownload = async () => {
+    if (downloading) return
+    const pdfUrl = item?.pdf_url ?? item?.file_url
+    if (!pdfUrl) return
+
+    setDownloading(true)
+    try {
+      // 1. Hit the backend download endpoint to increment downloads_count
+      //    (fire-and-forget — don't block the actual download on API success)
+      if (item?.id && typeof item.id === 'string' && item.id.length > 8) {
+        import('../lib/api').then(({ etalaseApi }) => {
+          etalaseApi.download?.(item.id).catch(() => {})
+        }).catch(() => {})
+      }
+
+      // 2. Fetch PDF as blob to force a real file save dialog
+      //    (using <a download> alone doesn't work cross-origin)
+      const res = await fetch(pdfUrl)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = `${(item.title ?? 'dokumen').replace(/[/\\]/g, '-')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+
+      // Clean up blob URL after a short delay
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+    } catch (err) {
+      console.error('Download failed:', err)
+    } finally {
+      setDownloading(false)
+    }
   }
 
   return (

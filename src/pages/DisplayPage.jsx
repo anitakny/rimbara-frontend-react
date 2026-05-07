@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, BookOpen, ArrowUpRight, Compass, FileText, Star, Eye, Download } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen, ArrowUpRight, Compass, FileText, Star, Eye, Download, Loader2 } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -29,7 +29,7 @@ export const typeStyle = {
 // ---------------------------------------------------------------------------
 // Card
 // ---------------------------------------------------------------------------
-export function DisplayCard({ item, onBaca }) {
+export function DisplayCard({ item, onBaca, loadingId }) {
   const style    = typeStyle[item.pub_type] ?? typeStyle['LAINNYA']
   const catLabel = CATEGORIES.find(c => c.id === item.pub_type)?.label ?? item.pub_type
   const CatIcon  = CATEGORIES.find(c => c.id === item.pub_type)?.icon ?? BookOpen
@@ -88,14 +88,19 @@ export function DisplayCard({ item, onBaca }) {
             </span>
           </div>
           <button
-            onClick={() => canBaca && onBaca?.(item)}
+            onClick={() => canBaca && !loadingId && onBaca?.(item)}
+            disabled={!!loadingId}
             className={`inline-flex items-center gap-1 font-sans text-sm font-medium
               transition-colors duration-[240ms] flex-shrink-0 ${
-                canBaca ? 'text-forest hover:text-clay cursor-pointer' : 'text-ash/30 cursor-default'
+                canBaca && !loadingId ? 'text-forest hover:text-clay cursor-pointer'
+                : canBaca && loadingId === item.id ? 'text-forest/60 cursor-wait'
+                : 'text-ash/30 cursor-default'
               }`}
           >
-            Baca
-            <ArrowUpRight size={14} />
+            {loadingId === item.id
+              ? <><Loader2 size={13} className="animate-spin" />Memuat…</>
+              : <>Baca<ArrowUpRight size={14} /></>
+            }
           </button>
         </div>
       </div>
@@ -130,7 +135,7 @@ export function CardSkeleton() {
 // ---------------------------------------------------------------------------
 const MAX_PER_ROW = 9
 
-function DisplayRow({ category, loading, onBaca }) {
+function DisplayRow({ category, loading, onBaca, loadingId }) {
   const [startIndex, setStartIndex] = useState(0)
   const itemsPerPage = 3
 
@@ -191,7 +196,7 @@ function DisplayRow({ category, loading, onBaca }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {loading
           ? Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)
-          : currentItems.map((item) => <DisplayCard key={item.id} item={item} onBaca={onBaca} />)
+          : currentItems.map((item) => <DisplayCard key={item.id} item={item} onBaca={onBaca} loadingId={loadingId} />)
         }
       </div>
 
@@ -220,9 +225,16 @@ export default function DisplayPage() {
   const navigate = useNavigate()
   const [publications, setPublications] = useState([])
   const [loading, setLoading]           = useState(true)
-  const [flipItem, setFlipItem]         = useState(null)
+  const [flipItem, setFlipItem]   = useState(null)
+  const [flipLoading, setFlipLoading] = useState(null)  // id being fetched
 
-  const handleBaca = (item) => setFlipItem(item)
+  const handleBaca = async (item) => {
+    // List serializer omits file_url — fetch detail to get it before opening viewer
+    setFlipLoading(item.id)
+    const { ok, data } = await etalaseApi.detail(item.id)
+    setFlipItem(ok ? data : item)
+    setFlipLoading(null)
+  }
 
   useEffect(() => {
     if (!session.getAccess()) {
@@ -287,7 +299,7 @@ export default function DisplayPage() {
         <div className="max-w-content mx-auto px-6 lg:px-12 py-12 md:py-16">
 
           {/* Filter bar */}
-          <div className="flex flex-wrap items-center gap-3 mb-12 p-4">
+          <div className="flex flex-wrap items-center gap-3 mb-6 p-4">
 
             {!loading && (
               <div className="flex items-center gap-2 ml-auto">
@@ -301,7 +313,7 @@ export default function DisplayPage() {
 
           {/* Category rows */}
           {categoriesWithData.map((cat) => (
-            <DisplayRow key={cat.id} category={cat} loading={loading} onBaca={handleBaca} />
+            <DisplayRow key={cat.id} category={cat} loading={loading} onBaca={handleBaca} loadingId={flipLoading} />
           ))}
 
           {/* Empty state */}
