@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Eye, MessageCircle, ArrowUpRight, Users } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import FeedProfileCard from '../components/FeedPage/FeedProfileCard'
 import LeaderboardCard from '../components/FeedPage/LeaderboardCard'
@@ -60,27 +60,33 @@ function ArticleCard({ article, onClick }) {
       <div className="p-5 md:p-6">
         {/* Author row — content type badge far right */}
         <div className="flex items-center gap-2.5 mb-4">
-          {author?.photo_url ? (
-            <img
-              src={author.photo_url}
-              alt={author.full_name}
-              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-forest/15 flex items-center justify-center flex-shrink-0">
-              <span className="font-serif font-semibold text-[0.65rem] text-forest leading-none">{initials}</span>
+          <Link
+            to={author?.id ? `/profile/${author.id}` : '#'}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-2.5 flex-1 min-w-0 group/author"
+          >
+            {author?.photo_url ? (
+              <img
+                src={author.photo_url}
+                alt={author.full_name}
+                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-forest/15 flex items-center justify-center flex-shrink-0">
+                <span className="font-serif font-semibold text-[0.65rem] text-forest leading-none">{initials}</span>
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="font-sans text-xs font-medium text-ink group-hover/author:text-forest leading-snug truncate transition-colors duration-[200ms]">
+                {author?.full_name}
+              </p>
+              <p className="font-sans text-[0.65rem] text-ash leading-snug">
+                {roleLabels[author?.role_category] ?? author?.role_category}
+                {' · '}
+                {timeAgo(article.published_at ?? article.created_at)}
+              </p>
             </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="font-sans text-xs font-medium text-ink leading-snug truncate">
-              {author?.full_name}
-            </p>
-            <p className="font-sans text-[0.65rem] text-ash leading-snug">
-              {roleLabels[author?.role_category] ?? author?.role_category}
-              {' · '}
-              {timeAgo(article.published_at ?? article.created_at)}
-            </p>
-          </div>
+          </Link>
           <span className={`tag text-[0.65rem] py-0.5 flex-shrink-0 ${style.bg} ${style.text} border ${style.border}`}>
             {typeLabel}
           </span>

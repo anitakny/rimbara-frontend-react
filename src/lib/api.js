@@ -155,6 +155,17 @@ export const articlesApi = {
   searchContributors: (q) =>
     _authRequest(`/api/articles/contributors/search/?q=${encodeURIComponent(q)}`),
 
+  // Engagement
+  view: (id) => _authRequest(`/api/articles/${id}/view/`, { method: 'POST' }),
+  comments: (id) => _authRequest(`/api/articles/${id}/comments/`),
+  addComment: (id, content) =>
+    _authRequest(`/api/articles/${id}/comments/`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
+  deleteComment: (articleId, commentId) =>
+    _authRequest(`/api/articles/${articleId}/comments/${commentId}/`, { method: 'DELETE' }),
+
   reviewQueue: () => _authRequest('/api/articles/review-queue/'),
 
   // action: 'PUBLISH' | 'REVISION' | 'REJECT'

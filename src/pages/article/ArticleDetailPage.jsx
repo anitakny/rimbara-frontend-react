@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Clock, AlertCircle, CheckCircle2, XCircle, FileText, Download, Edit3 } from 'lucide-react'
 import Navbar from '../../components/Navbar'
 import { articlesApi, session } from '../../lib/api'
+import ArticleComment from '../../components/ArticlePage/ArticleComment'
 
 // ---------------------------------------------------------------------------
 // Config
@@ -61,17 +62,25 @@ export default function ArticleDetailPage() {
   
   const [article, setArticle] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [error, setError]     = useState('')
+  const viewFiredRef          = useRef(false)   // guard against double-fire in React StrictMode
 
   useEffect(() => {
     if (!session.getAccess()) {
       navigate('/login', { replace: true })
       return
     }
+    viewFiredRef.current = false   // reset on article change
 
     articlesApi.detail(id).then(({ ok, data, status }) => {
       if (ok) {
         setArticle(data)
+        if (data.status === 'PUBLISHED' && !viewFiredRef.current) {
+          viewFiredRef.current = true
+          articlesApi.view(id).then(({ ok: vOk, data: vData }) => {
+            if (vOk) setArticle(prev => prev ? { ...prev, views_count: vData.views_count } : prev)
+          }).catch(() => {})
+        }
       } else if (status === 404) {
         setError('Artikel tidak ditemukan.')
       } else {
@@ -296,6 +305,11 @@ export default function ArticleDetailPage() {
               </div>
             )}
           </section>
+
+          {/* ── Comments (published articles only) — self-contained component ── */}
+          {article.status === 'PUBLISHED' && (
+            <ArticleComment articleId={id} />
+          )}
 
         </div>
       </main>
