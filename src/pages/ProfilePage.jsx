@@ -361,7 +361,7 @@ export default function ProfilePage() {
                   Tentang <em className="font-accent italic text-clay">{profile.full_name}</em>
                 </h2>
                 <div className="flex flex-col gap-3.5 mb-6 -mt-4">
-                  <span className="font-sans text-xs text-ash/70">{userId || sessionUser?.id || profile.id}</span>
+                  <span className="font-sans text-xs text-ash/70">{profile.user_id ?? userId ?? sessionUser?.id}</span>
                   {profile.institution && (
                     <div className="flex items-center gap-3">
                       <Building2 size={17} className="text-ash flex-shrink-0" />
