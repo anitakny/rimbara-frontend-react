@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, Settings, FolderOpen, ShieldCheck, ClipboardList } from 'lucide-react'
+import { ArrowUpRight, Settings, FolderOpen, ShieldCheck, ClipboardList, BookMarked } from 'lucide-react'
 import { session } from '../../lib/api'
 
 const ADMIN_URL = `${import.meta.env.VITE_API_URL}/4Dm1n_d4Shb04Rd/`
@@ -24,8 +24,9 @@ function getInitials(name) {
 export default function FeedProfileCard() {
   const user = session.getUser()
   const initials = getInitials(user?.full_name)
-  const isAdmin    = user?.role === 'ADMIN' || user?.is_staff || user?.is_superuser
-  const isReviewer = user?.role === 'ADMIN' || user?.role === 'REVIEWER' || user?.is_staff || user?.is_superuser
+  const isAdmin          = user?.role === 'ADMIN' || user?.is_staff || user?.is_superuser
+  const isReviewer       = user?.role === 'ADMIN' || user?.role === 'REVIEWER' || user?.is_staff || user?.is_superuser
+  const isEtalaseManager = user?.role === 'ADMIN' || user?.role === 'MODERATOR' || user?.is_staff || user?.is_superuser
 
   return (
     <div className="bg-white rounded-card border border-sand shadow-subtle overflow-hidden">
@@ -87,6 +88,16 @@ export default function FeedProfileCard() {
             >
               Review Artikel
               <ClipboardList size={13} className="text-ash/50 group-hover:text-forest transition-colors duration-[240ms]" />
+            </Link>
+          )}
+          {isEtalaseManager && (
+            <Link
+              to="/display/manage"
+              className="flex items-center justify-between py-1.5 px-2 rounded-lg font-sans text-sm
+                text-ink hover:bg-sand/40 hover:text-forest transition-all duration-[240ms] group"
+            >
+              Manajemen Etalase
+              <BookMarked size={13} className="text-ash/50 group-hover:text-forest transition-colors duration-[240ms]" />
             </Link>
           )}
         </div>

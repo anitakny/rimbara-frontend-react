@@ -187,6 +187,11 @@ export const etalaseApi = {
     return _authRequest(`/api/etalase/${q ? `?${q}` : ''}`)
   },
   detail: (id) => _authRequest(`/api/etalase/${id}/`),
+
+  // Admin-only (IsRIMBAHARIAdmin)
+  create: (formData) => _authFetch('/api/etalase/', { method: 'POST', body: formData }),
+  update: (id, formData) => _authFetch(`/api/etalase/${id}/`, { method: 'PATCH', body: formData }),
+  delete: (id) => _authRequest(`/api/etalase/${id}/`, { method: 'DELETE' }),
 }
 
 // ---------------------------------------------------------------------------

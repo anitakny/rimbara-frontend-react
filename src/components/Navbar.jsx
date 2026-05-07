@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { LogOut, ChevronDown, Menu, X, ShieldCheck, ClipboardList } from 'lucide-react'
+import { LogOut, ChevronDown, Menu, X, ShieldCheck, ClipboardList, BookMarked } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { authApi, session } from '../lib/api'
 
@@ -28,8 +28,9 @@ export default function Navbar() {
 
   const user = session.getUser()
   const initials = getInitials(user?.full_name)
-  const isAdmin    = user?.role === 'ADMIN' || user?.is_staff || user?.is_superuser
-  const isReviewer = user?.role === 'ADMIN' || user?.role === 'REVIEWER' || user?.is_staff || user?.is_superuser
+  const isAdmin          = user?.role === 'ADMIN' || user?.is_staff || user?.is_superuser
+  const isReviewer       = user?.role === 'ADMIN' || user?.role === 'REVIEWER' || user?.is_staff || user?.is_superuser
+  const isEtalaseManager = user?.role === 'ADMIN' || user?.role === 'MODERATOR' || user?.is_staff || user?.is_superuser
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -178,6 +179,17 @@ export default function Navbar() {
                           Review Artikel
                         </Link>
                       )}
+                      {isEtalaseManager && (
+                        <Link
+                          to="/display/manage"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 font-sans text-sm text-ink
+                            hover:bg-sand/50 transition-colors duration-[240ms]"
+                        >
+                          <BookMarked size={15} className="text-ash flex-shrink-0" />
+                          Manajemen Etalase
+                        </Link>
+                      )}
                       <div className="h-px bg-sand my-1" />
                       <Link
                         to="/settings"
@@ -319,6 +331,17 @@ export default function Navbar() {
               >
                 <ClipboardList size={15} className="text-ash flex-shrink-0" />
                 Review Artikel
+              </Link>
+            )}
+            {isEtalaseManager && (
+              <Link
+                to="/display/manage"
+                onClick={closeMenu}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-lg font-sans text-sm text-ink
+                  hover:bg-sand/40 transition-colors duration-[240ms]"
+              >
+                <BookMarked size={15} className="text-ash flex-shrink-0" />
+                Manajemen Etalase
               </Link>
             )}
           </div>

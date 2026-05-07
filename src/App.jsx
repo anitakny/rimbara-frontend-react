@@ -10,6 +10,8 @@ import ProfilePage from './pages/ProfilePage'
 import DisplayPage from './pages/DisplayPage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import DisplayCategoryPage from './pages/display/DisplayCategoryPage'
+import DisplayManagementPage from './pages/display/DisplayManagementPage'
+import DisplayUploadPage from './pages/display/DisplayUploadPage'
 import SettingsPage from './pages/SettingsPage'
 import MyArticlePage from './pages/article/MyArticlePage'
 import ArticleUploadPage from './pages/article/ArticleUploadPage'
@@ -31,6 +33,9 @@ export default function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/display" element={<DisplayPage />} />
+        <Route path="/display/manage" element={<DisplayManagementPage />} />
+        <Route path="/display/manage/new" element={<DisplayUploadPage />} />
+        <Route path="/display/manage/:pubId" element={<DisplayUploadPage />} />
         <Route path="/display/:pubType" element={<DisplayCategoryPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/settings" element={<SettingsPage />} />
