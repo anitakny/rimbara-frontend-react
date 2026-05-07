@@ -141,6 +141,13 @@ export const articlesApi = {
 
   deleteArticle: (id) => _authRequest(`/api/articles/${id}/`, { method: 'DELETE' }),
 
+  // JSON PATCH — update title/abstract only (no file re-upload needed)
+  updateMeta: (id, { title, abstract }) =>
+    _authRequest(`/api/articles/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title, abstract }),
+    }),
+
   submit: (id) => _authRequest(`/api/articles/${id}/submit/`, { method: 'PATCH', body: JSON.stringify({}) }),
 
   // Reviewer + Admin
