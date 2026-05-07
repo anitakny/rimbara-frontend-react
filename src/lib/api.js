@@ -32,6 +32,14 @@ export const session = {
   },
 }
 
+// Redirect to /login and clear session on expired token
+function _handleExpired() {
+  session.clear()
+  if (!window.location.pathname.startsWith('/login')) {
+    window.location.href = '/login'
+  }
+}
+
 // For multipart/form-data (file uploads) — no Content-Type header, browser sets it with boundary
 async function _authFetch(path, opts = {}) {
   const { headers: extraHeaders, ...restOpts } = opts
@@ -40,17 +48,20 @@ async function _authFetch(path, opts = {}) {
     headers: { Authorization: `Bearer ${session.getAccess()}`, ...extraHeaders },
   })
   const data = await res.json().catch(() => ({}))
+  if (res.status === 401) _handleExpired()
   return { ok: res.ok, status: res.status, data }
 }
 
-function _authRequest(path, opts = {}) {
-  return _request(path, {
+async function _authRequest(path, opts = {}) {
+  const result = await _request(path, {
     ...opts,
     headers: {
       Authorization: `Bearer ${session.getAccess()}`,
       ...opts.headers,
     },
   })
+  if (result.status === 401) _handleExpired()
+  return result
 }
 
 // ---------------------------------------------------------------------------
