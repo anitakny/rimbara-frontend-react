@@ -33,15 +33,14 @@ export const session = {
 }
 
 // For multipart/form-data (file uploads) — no Content-Type header, browser sets it with boundary
-function _authFetch(path, opts = {}) {
+async function _authFetch(path, opts = {}) {
   const { headers: extraHeaders, ...restOpts } = opts
-  return fetch(`${BASE}${path}`, {
+  const res = await fetch(`${BASE}${path}`, {
     ...restOpts,
     headers: { Authorization: `Bearer ${session.getAccess()}`, ...extraHeaders },
-  }).then(async (res) => {
-    const data = await res.json().catch(() => ({}))
-    return { ok: res.ok, status: res.status, data }
   })
+  const data = await res.json().catch(() => ({}))
+  return { ok: res.ok, status: res.status, data }
 }
 
 function _authRequest(path, opts = {}) {
@@ -132,6 +131,29 @@ export const articlesApi = {
   deleteArticle: (id) => _authRequest(`/api/articles/${id}/`, { method: 'DELETE' }),
 
   submit: (id) => _authRequest(`/api/articles/${id}/submit/`, { method: 'PATCH', body: JSON.stringify({}) }),
+
+  // Reviewer + Admin
+  reviewQueue: () => _authRequest('/api/articles/review-queue/'),
+
+  // action: 'PUBLISH' | 'REVISION' | 'REJECT'
+  // thumbnail_url is passed on PUBLISH so the backend can set it before finalising
+  review: (id, action, reviewer_note = '', thumbnail_url = null) => {
+    const body = { action, reviewer_note }
+    if (thumbnail_url) body.thumbnail_url = thumbnail_url
+    return _authRequest(`/api/articles/${id}/review/`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
+  },
+
+  // Triggers PDF generation for a PUBLISHED article (fire-and-forget after publish)
+  download: (id) => _authRequest(`/api/articles/${id}/download/`),
+
+  // Admin only — history with optional ?status= filter
+  reviewHistory: (status = '') => {
+    const qs = status ? `?status=${status}` : ''
+    return _authRequest(`/api/articles/admin/${qs}`)
+  },
 }
 
 // ---------------------------------------------------------------------------

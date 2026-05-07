@@ -15,6 +15,7 @@ import MyArticlePage from './pages/article/MyArticlePage'
 import ArticleUploadPage from './pages/article/ArticleUploadPage'
 import ArticleEditPage from './pages/article/ArticleEditPage'
 import ArticleDetailPage from './pages/article/ArticleDetailPage'
+import ArticlePage from './pages/ArticlePage'
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/articles/new" element={<ArticleUploadPage />} />
         <Route path="/articles/:id/edit" element={<ArticleEditPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
+        <Route path="/review" element={<ArticlePage />} />
       </Routes>
     </BrowserRouter>
   )
