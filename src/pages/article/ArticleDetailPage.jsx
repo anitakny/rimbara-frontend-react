@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Clock, AlertCircle, CheckCircle2, XCircle, FileText, Download, Users, Edit3 } from 'lucide-react'
+import { ArrowLeft, Clock, AlertCircle, CheckCircle2, XCircle, FileText, Download, Edit3 } from 'lucide-react'
 import Navbar from '../../components/Navbar'
 import { articlesApi, session } from '../../lib/api'
 
@@ -231,34 +231,68 @@ export default function ArticleDetailPage() {
               <div className="h-px w-6 bg-clay/50" />
               <h2 className="font-serif text-h3 font-semibold text-ink">Dokumen</h2>
             </div>
-            {article.pdf_url || article.original_file_url ? (
-              <a 
-                href={article.pdf_url || article.original_file_url} 
-                target="_blank" 
-                rel="noreferrer"
-                className="flex items-center justify-between gap-4 bg-white border border-sand rounded-card p-5 hover:border-forest/40 hover:shadow-subtle transition-all duration-[240ms] group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-forest/10 flex items-center justify-center flex-shrink-0">
-                    <FileText size={20} className="text-forest" />
-                  </div>
-                  <div>
-                    <p className="font-sans text-sm font-medium text-ink group-hover:text-forest transition-colors">
-                      {(article.pdf_url || article.original_file_url).split('/').pop() || 'Dokumen Artikel'}
-                    </p>
-                    <p className="font-sans text-[0.65rem] text-ash uppercase tracking-widest mt-1">
-                      {article.pdf_url ? 'PDF' : article.original_file_type || 'PDF'} Document
-                    </p>
-                  </div>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-sand/50 flex items-center justify-center text-ash group-hover:bg-forest/10 group-hover:text-forest transition-colors flex-shrink-0">
-                  <Download size={14} />
-                </div>
-              </a>
-            ) : (
+
+            {!article.pdf_url && !article.original_file_url ? (
               <div className="bg-sand/20 border border-sand rounded-card p-6 flex flex-col items-center justify-center text-center">
                 <FileText size={24} className="text-ash/40 mb-3" />
                 <p className="font-sans text-sm font-medium text-ink mb-1">Dokumen sedang diproses</p>
+                <p className="font-sans text-caption text-ash">Akan tersedia setelah artikel diterbitkan.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {/* Generated PDF — primary, shown to everyone */}
+                {article.pdf_url && (
+                  <a
+                    href={article.pdf_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between gap-4 bg-white border border-sand rounded-card p-5 hover:border-forest/40 hover:shadow-subtle transition-all duration-[240ms] group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg bg-forest/10 flex items-center justify-center flex-shrink-0">
+                        <FileText size={20} className="text-forest" />
+                      </div>
+                      <div>
+                        <p className="font-sans text-sm font-medium text-ink group-hover:text-forest transition-colors">
+                          Baca / Unduh PDF
+                        </p>
+                        <p className="font-sans text-[0.65rem] text-ash uppercase tracking-widest mt-1">
+                          PDF · Dokumen Artikel
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-sand/50 flex items-center justify-center text-ash group-hover:bg-forest/10 group-hover:text-forest transition-colors flex-shrink-0">
+                      <Download size={14} />
+                    </div>
+                  </a>
+                )}
+
+                {/* Original file — only for non-published (author reference); hidden once published */}
+                {article.original_file_url && article.status !== 'PUBLISHED' && (
+                  <a
+                    href={article.original_file_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between gap-4 bg-white border border-sand rounded-card px-5 py-3.5 hover:border-forest/40 hover:shadow-subtle transition-all duration-[240ms] group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-9 h-9 rounded-lg bg-sand/60 flex items-center justify-center flex-shrink-0">
+                        <FileText size={16} className="text-ash" />
+                      </div>
+                      <div>
+                        <p className="font-sans text-sm font-medium text-ink group-hover:text-forest transition-colors">
+                          Unduh File Asli
+                        </p>
+                        <p className="font-sans text-[0.65rem] text-ash uppercase tracking-widest mt-0.5">
+                          {article.original_file_type ?? 'PDF'} · Dokumen original yang diunggah
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-sand/50 flex items-center justify-center text-ash group-hover:bg-forest/10 group-hover:text-forest transition-colors flex-shrink-0">
+                      <Download size={14} />
+                    </div>
+                  </a>
+                )}
               </div>
             )}
           </section>

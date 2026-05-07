@@ -77,7 +77,7 @@ export default function DisplayManagementPage() {
 
       <main className="pt-16">
         {/* ── Hero ──────────────────────────────────────────── */}
-        <section className="relative min-h-[32vh] flex flex-col justify-end overflow-hidden">
+        <section className="relative min-h-[40vh] flex flex-col justify-end overflow-hidden">
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-gradient-to-b from-forest/90 via-forest/70 to-ink/90 z-10" />
             <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse at 30% 40%, #2A4F3C 0%, transparent 60%), linear-gradient(160deg, #1F3B2D 0%, #2A4F3C 55%, #162A20 100%)' }} />

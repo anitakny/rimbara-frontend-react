@@ -363,43 +363,9 @@ export default function ArticlePage() {
                                 <p className="font-sans text-[0.65rem] uppercase tracking-widest text-ash/60 mb-2">
                                   Abstrak
                                 </p>
-                                <p className="font-accent italic text-body text-ash/80 leading-relaxed">
+                                <p className="font-sans italic text-body text-ash/80 leading-relaxed">
                                   {article.abstract}
                                 </p>
-                              </div>
-                            )}
-
-                            {/* File access */}
-                            {(article.original_file_url || article.pdf_url) && (
-                              <div className="flex flex-wrap gap-3">
-                                {article.original_file_url && (
-                                  <a
-                                    href={article.original_file_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-sand
-                                      bg-white font-sans text-sm text-ink hover:text-forest hover:border-forest/40
-                                      transition-all duration-[240ms]"
-                                  >
-                                    <FileText size={14} />
-                                    Dokumen Asli
-                                    <ExternalLink size={11} className="text-ash/40" />
-                                  </a>
-                                )}
-                                {article.pdf_url && (
-                                  <a
-                                    href={article.pdf_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-forest/30
-                                      bg-forest/5 font-sans text-sm text-forest hover:bg-forest hover:text-bone
-                                      transition-all duration-[240ms]"
-                                  >
-                                    <FileText size={14} />
-                                    Buka PDF
-                                    <ExternalLink size={11} className="opacity-60" />
-                                  </a>
-                                )}
                               </div>
                             )}
 
@@ -416,7 +382,7 @@ export default function ArticlePage() {
                                 </div>
                               ))}
 
-                              {/* File download — replaced "Kata Kunci" */}
+                              {/* File download */}
                               <div className="bg-white rounded-lg border border-sand px-3 py-2">
                                 <p className="font-sans text-[0.6rem] uppercase tracking-widest text-ash/60 mb-1">
                                   Unduh File

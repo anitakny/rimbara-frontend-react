@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Upload, X, Plus, UserRound, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react'
+import { Upload, X, Plus, UserRound, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import { articlesApi, profilesApi, session } from '../../lib/api'
@@ -46,15 +46,29 @@ function ContributorChip({ contributor, onRemove }) {
   )
 }
 
+const ROLE_LABEL = {
+  MAHASISWA: 'Mahasiswa', AKADEMISI: 'Akademisi',
+  PEMUDA_ADAT: 'Pemuda Adat', AKTIVIS: 'Aktivis',
+}
+
 // ---------------------------------------------------------------------------
-// Contributor lookup
+// Contributor lookup — name search primary, UUID fallback
 // ---------------------------------------------------------------------------
 function UserSearchDropdown({ excluded, onSelect, onClose }) {
+  const [mode, setMode]       = useState('name')   // 'name' | 'uuid'
+  const inputRef              = useRef(null)
+  const debounceRef           = useRef(null)
+
+  // ── Name search state ─────────────────────────────────────────────────
+  const [query, setQuery]     = useState('')
+  const [results, setResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState('')
+
+  // ── UUID fallback state ───────────────────────────────────────────────
   const [uuid, setUuid]       = useState('')
-  const [found, setFound]     = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const inputRef = useRef(null)
+  const [uuidLoading, setUuidLoading] = useState(false)
+  const [uuidError, setUuidError]     = useState('')
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -63,60 +77,150 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [onClose])
 
-  const lookup = async () => {
+  // Debounced name search
+  useEffect(() => {
+    if (mode !== 'name') return
+    clearTimeout(debounceRef.current)
+    setSearchError('')
+    if (query.length < 2) { setResults([]); return }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true)
+      const { ok, data } = await articlesApi.searchContributors(query)
+      if (ok) setResults((data ?? []).filter(r => !excluded.includes(r.user_id)))
+      else setSearchError('Gagal mencari. Coba lagi.')
+      setSearching(false)
+    }, 350)
+    return () => clearTimeout(debounceRef.current)
+  }, [query, mode])
+
+  const handleSelectResult = (r) => {
+    onSelect({ id: r.user_id, full_name: r.full_name, photo_url: r.photo_url,
+               role_category: r.role_category, institution: '' })
+    onClose()
+  }
+
+  // UUID lookup
+  const lookupUUID = async () => {
     let t = uuid.trim()
     if (t.length === 32 && !t.includes('-'))
       t = `${t.slice(0,8)}-${t.slice(8,12)}-${t.slice(12,16)}-${t.slice(16,20)}-${t.slice(20)}`
-    if (!UUID_RE.test(t)) { setError('Format UUID tidak valid.'); return }
-    if (excluded.includes(t)) { setError('Sudah ditambahkan.'); return }
-    setLoading(true); setError('')
+    if (!UUID_RE.test(t)) { setUuidError('Format UUID tidak valid.'); return }
+    if (excluded.includes(t)) { setUuidError('Sudah ditambahkan.'); return }
+    setUuidLoading(true); setUuidError('')
     try {
       const { ok, status, data } = await profilesApi.public(t)
-      if (ok) setFound(data)
-      else if (status === 404) { setError('Pengguna tidak ditemukan.'); setFound(null) }
-      else { setError('Gagal memverifikasi.'); setFound(null) }
-    } catch { setError('Gangguan koneksi.') }
-    finally { setLoading(false) }
+      if (ok) {
+        onSelect({ id: data.user_id ?? t, full_name: data.full_name,
+                   photo_url: data.photo_url, institution: data.institution })
+        onClose()
+      } else if (status === 404) setUuidError('Pengguna tidak ditemukan.')
+      else setUuidError('Gagal memverifikasi.')
+    } catch { setUuidError('Gangguan koneksi.') }
+    finally { setUuidLoading(false) }
   }
 
   return (
     <div data-dropdown className="absolute z-50 top-full left-0 mt-2 w-80 bg-white rounded-card border border-sand shadow-elevated overflow-hidden">
-      <div className="px-3 py-2.5 border-b border-sand">
-        <p className="font-sans text-[0.6rem] uppercase tracking-widest text-ash mb-1.5">Masukkan User ID kontributor</p>
-        <div className="flex gap-2">
-          <input ref={inputRef} value={uuid}
-            onChange={(e) => { setUuid(e.target.value); setError(''); setFound(null) }}
-            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), lookup())}
-            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-            className="flex-1 font-mono text-xs text-ink placeholder:text-ash/40 outline-none bg-bone border border-sand rounded-lg px-2.5 py-1.5 focus:border-forest transition-colors duration-[200ms]" />
-          <button type="button" onClick={lookup} disabled={loading || !uuid.trim()}
-            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-forest text-white font-sans text-xs font-medium hover:bg-forest/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-[200ms] flex items-center gap-1.5">
-            {loading ? <Loader2 size={12} className="animate-spin" /> : 'Cek'}
-          </button>
-        </div>
-        {error && <p className="font-sans text-[0.65rem] text-clay mt-1.5">{error}</p>}
-      </div>
-      {found && (
-        <div className="px-3 py-2.5">
-          <div className="flex items-center gap-3 bg-forest/5 border border-forest/15 rounded-lg px-3 py-2.5 mb-2.5">
-            <div className="w-8 h-8 rounded-full bg-forest/10 flex items-center justify-center flex-shrink-0">
-              <span className="font-serif font-semibold text-[0.6rem] text-forest leading-none">
-                {found.full_name?.charAt(0).toUpperCase() || '?'}
-              </span>
+
+      {mode === 'name' ? (
+        <>
+          {/* Name search input */}
+          <div className="px-3 py-2.5 border-b border-sand">
+            <p className="font-sans text-[0.6rem] uppercase tracking-widest text-ash mb-1.5">
+              Cari nama kontributor
+            </p>
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ash/50" />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Ketik nama…"
+                className="w-full pl-8 pr-3 py-1.5 font-sans text-sm text-ink placeholder:text-ash/40 outline-none bg-bone border border-sand rounded-lg focus:border-forest transition-colors duration-[200ms]"
+              />
+              {searching && <Loader2 size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ash animate-spin" />}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-sans text-sm font-medium text-ink leading-snug truncate">{found.full_name}</p>
-              <p className="font-sans text-caption text-ash leading-snug truncate">{found.institution || 'Anggota Rimbahari'}</p>
-            </div>
-            <UserRound size={14} className="text-forest flex-shrink-0" />
+            {searchError && <p className="font-sans text-[0.65rem] text-clay mt-1.5">{searchError}</p>}
           </div>
-          <button type="button" onClick={() => { onSelect(found); onClose() }}
-            className="w-full py-2 rounded-lg bg-forest text-white font-sans text-sm font-medium hover:bg-forest/90 transition-colors duration-[200ms] active:scale-[0.98]">
-            Tambahkan
-          </button>
-        </div>
+
+          {/* Results */}
+          <div className="max-h-52 overflow-y-auto">
+            {results.length > 0 ? (
+              results.map(r => (
+                <button
+                  key={r.user_id}
+                  type="button"
+                  onClick={() => handleSelectResult(r)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-sand/40 transition-colors duration-[160ms] text-left"
+                >
+                  {r.photo_url ? (
+                    <img src={r.photo_url} alt={r.full_name}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-forest/10 flex items-center justify-center flex-shrink-0">
+                      <span className="font-serif font-semibold text-[0.6rem] text-forest leading-none">
+                        {r.full_name?.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-sans text-sm font-medium text-ink leading-snug truncate">{r.full_name}</p>
+                    {r.role_category && (
+                      <p className="font-sans text-[0.6rem] text-ash leading-snug">
+                        {ROLE_LABEL[r.role_category] ?? r.role_category}
+                      </p>
+                    )}
+                  </div>
+                  <UserRound size={13} className="text-ash/40 flex-shrink-0" />
+                </button>
+              ))
+            ) : query.length >= 2 && !searching ? (
+              <p className="font-sans text-caption text-ash text-center py-4 px-3">
+                Tidak ada pengguna dengan nama <strong>"{query}"</strong>.
+              </p>
+            ) : query.length < 2 ? (
+              <p className="font-sans text-caption text-ash text-center py-4">
+                Ketik minimal 2 karakter untuk mencari.
+              </p>
+            ) : null}
+          </div>
+
+          {/* UUID fallback */}
+          <div className="px-3 py-2.5 border-t border-sand">
+            <button type="button" onClick={() => { setMode('uuid'); setQuery('') }}
+              className="font-sans text-[0.65rem] text-ash hover:text-forest underline underline-offset-4 transition-colors duration-[200ms]">
+              Masukkan User ID (UUID) manual →
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* UUID input */}
+          <div className="px-3 py-2.5 border-b border-sand">
+            <button type="button" onClick={() => { setMode('name'); setUuid(''); setUuidError('') }}
+              className="flex items-center gap-1 font-sans text-[0.65rem] text-ash hover:text-forest transition-colors duration-[200ms] mb-2">
+              ← Kembali ke pencarian nama
+            </button>
+            <p className="font-sans text-[0.6rem] uppercase tracking-widest text-ash mb-1.5">User ID (UUID)</p>
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                value={uuid}
+                onChange={(e) => { setUuid(e.target.value); setUuidError('') }}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), lookupUUID())}
+                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                className="flex-1 font-mono text-xs text-ink placeholder:text-ash/40 outline-none bg-bone border border-sand rounded-lg px-2.5 py-1.5 focus:border-forest transition-colors duration-[200ms]"
+              />
+              <button type="button" onClick={lookupUUID} disabled={uuidLoading || !uuid.trim()}
+                className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-forest text-white font-sans text-xs font-medium hover:bg-forest/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-[200ms] flex items-center gap-1.5">
+                {uuidLoading ? <Loader2 size={12} className="animate-spin" /> : 'Cek'}
+              </button>
+            </div>
+            {uuidError && <p className="font-sans text-[0.65rem] text-clay mt-1.5">{uuidError}</p>}
+          </div>
+        </>
       )}
-      {!found && !error && <p className="font-sans text-caption text-ash text-center py-4">Tempel User ID lalu tekan Cek.</p>}
+
     </div>
   )
 }

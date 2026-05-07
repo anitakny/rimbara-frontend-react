@@ -151,6 +151,10 @@ export const articlesApi = {
   submit: (id) => _authRequest(`/api/articles/${id}/submit/`, { method: 'PATCH', body: JSON.stringify({}) }),
 
   // Reviewer + Admin
+  // Search users by name for contributor lookup (?q=, min 2 chars)
+  searchContributors: (q) =>
+    _authRequest(`/api/articles/contributors/search/?q=${encodeURIComponent(q)}`),
+
   reviewQueue: () => _authRequest('/api/articles/review-queue/'),
 
   // action: 'PUBLISH' | 'REVISION' | 'REJECT'
