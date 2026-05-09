@@ -228,11 +228,11 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-export default function ArticleUploadPage() {
+export default function VignetteUploadPage() {
   const navigate = useNavigate()
 
-  const contentType = 'ARTIKEL'
-  const label = 'Artikel'
+  const contentType = 'VIGNETTE'
+  const label = 'Vignette'
 
   // ── File ──────────────────────────────────────────────────────────────
   const [file, setFile]           = useState(null)

@@ -69,7 +69,7 @@ function CardSkeleton() {
 // Page
 // ---------------------------------------------------------------------------
 
-export default function ArticlePage() {
+export default function OpinionPage() {
   const navigate   = useNavigate()
   const user       = session.getUser()
   const isReviewer = user?.role === 'ADMIN' || user?.role === 'REVIEWER' || user?.is_staff || user?.is_superuser
@@ -109,7 +109,10 @@ export default function ArticlePage() {
   const loadQueue = async () => {
     setLoading(true)
     const { ok, data } = await articlesApi.reviewQueue()
-    if (ok) setArticles(Array.isArray(data) ? data : (data.results ?? []))
+    if (ok) {
+      const all = Array.isArray(data) ? data : (data.results ?? [])
+      setArticles(all.filter(a => a.content_type === 'OPINION'))
+    }
     setLoading(false)
   }
 
@@ -119,7 +122,7 @@ export default function ArticlePage() {
     const { ok, data } = await articlesApi.reviewHistory()
     if (ok) {
       const all = Array.isArray(data) ? data : (data.results ?? [])
-      setHistory(all.filter(a => ['PUBLISHED', 'REVISION', 'REJECTED'].includes(a.status)))
+      setHistory(all.filter(a => ['PUBLISHED', 'REVISION', 'REJECTED'].includes(a.status) && a.content_type === 'OPINION'))
     }
     setHistLoaded(true)
     setHistLoading(false)
@@ -173,7 +176,7 @@ export default function ArticlePage() {
       setArticles(prev => prev.filter(a => a.id !== articleId))
       unclaim(articleId)
       const labels = { PUBLISH: 'diterbitkan', REVISION: 'dikembalikan untuk revisi', REJECT: 'ditolak' }
-      setSuccessMsg(`Artikel berhasil ${labels[action] ?? 'diproses'}.`)
+      setSuccessMsg(`Opini berhasil ${labels[action] ?? 'diproses'}.`)
       setTimeout(() => setSuccessMsg(''), 4000)
     } else {
       setErrors(prev => ({
@@ -212,10 +215,10 @@ export default function ArticlePage() {
               <div>
                 <h1 className="font-serif text-h1 font-semibold text-ink leading-tight">
                   Antrian{' '}
-                  <em className="font-accent italic text-clay">Review Artikel</em>
+                  <em className="font-accent italic text-clay">Review Opini</em>
                 </h1>
                 <p className="font-sans text-body text-ash mt-1">
-                  Klaim artikel, tinjau isinya, lalu berikan keputusan editorial.
+                  Klaim opini, tinjau isinya, lalu berikan keputusan editorial.
                 </p>
               </div>
               <button
@@ -296,7 +299,7 @@ export default function ArticlePage() {
                   <CheckCircle2 size={36} className="text-moss/40 mx-auto mb-4" />
                   <p className="font-serif text-h3 font-semibold text-ink mb-2">Antrian kosong</p>
                   <p className="font-sans text-body text-ash">
-                    Tidak ada artikel yang menunggu review saat ini.
+                    Tidak ada opini yang menunggu review saat ini.
                   </p>
                 </div>
               ) : (
@@ -554,7 +557,7 @@ export default function ArticlePage() {
                     <div className="bg-white rounded-card border border-sand shadow-subtle px-8 py-12 text-center">
                       <History size={32} className="text-ash/30 mx-auto mb-4" />
                       <p className="font-serif text-h3 font-semibold text-ink mb-2">Belum ada riwayat</p>
-                      <p className="font-sans text-body text-ash">Artikel yang sudah diproses akan muncul di sini.</p>
+                      <p className="font-sans text-body text-ash">Opini yang sudah diproses akan muncul di sini.</p>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-3">
@@ -627,9 +630,9 @@ export default function ArticlePage() {
         const isSubmitting = reviewing === confirmAction.articleId
 
         const ACTION_CFG = {
-          PUBLISH:  { heading: 'Terbitkan Artikel?',  btn: 'Terbitkan',    btnCls: 'bg-moss text-bone hover:bg-moss/90' },
+          PUBLISH:  { heading: 'Terbitkan Opini?',  btn: 'Terbitkan',    btnCls: 'bg-moss text-bone hover:bg-moss/90' },
           REVISION: { heading: 'Minta Revisi?',       btn: 'Minta Revisi', btnCls: 'bg-clay/15 text-clay border border-clay/30 hover:bg-clay/25' },
-          REJECT:   { heading: 'Tolak Artikel?',      btn: 'Tolak',        btnCls: 'bg-sand text-ash border border-sand/80 hover:bg-ash/10 hover:text-ink' },
+          REJECT:   { heading: 'Tolak Opini?',      btn: 'Tolak',        btnCls: 'bg-sand text-ash border border-sand/80 hover:bg-ash/10 hover:text-ink' },
         }
         const cfg = ACTION_CFG[action]
 
@@ -647,17 +650,17 @@ export default function ArticlePage() {
                   <h2 className="font-serif text-h2 font-semibold text-ink mb-1">{cfg.heading}</h2>
                   {action === 'PUBLISH' && (
                     <p className="font-sans text-caption text-ash">
-                      Artikel akan diterbitkan dan dapat diakses oleh publik.
+                      Opini akan diterbitkan dan dapat diakses oleh publik.
                     </p>
                   )}
                   {action === 'REVISION' && (
                     <p className="font-sans text-caption text-ash">
-                      Artikel akan dikembalikan ke penulis dengan catatan revisi.
+                      Opini akan dikembalikan ke penulis dengan catatan revisi.
                     </p>
                   )}
                   {action === 'REJECT' && (
                     <p className="font-sans text-caption text-ash">
-                      Artikel akan ditolak dan penulis akan menerima pemberitahuan.
+                      Opini akan ditolak dan penulis akan menerima pemberitahuan.
                     </p>
                   )}
                 </div>

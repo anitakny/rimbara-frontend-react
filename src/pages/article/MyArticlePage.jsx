@@ -20,7 +20,13 @@ const STATUS = {
 }
 
 const TYPE_LABEL = {
-  ARTIKEL: 'Artikel', OPINION: 'Opinion', VIGNETTE: 'Vignette', CERITA: 'Cerita',
+  ARTIKEL: 'Artikel', OPINION: 'Opini', VIGNETTE: 'Vignette',
+}
+
+const TYPE_STYLE = {
+  ARTIKEL: 'bg-forest/10 text-forest border-forest/20',
+  OPINION: 'bg-clay/10 text-clay border-clay/20',
+  VIGNETTE: 'bg-moss/10 text-moss border-moss/20',
 }
 
 // ---------------------------------------------------------------------------
@@ -77,7 +83,7 @@ function ArticleRow({ article }) {
         <div className="flex items-center gap-2 mb-1.5">
           <span className={`tag text-[0.6rem] py-0.5 border ${cfg.chip}`}>{cfg.label}</span>
           {article.content_type && (
-            <span className="font-sans text-[0.6rem] text-ash/60 uppercase tracking-wide">
+            <span className={`tag text-[0.6rem] py-0.5 border ${TYPE_STYLE[article.content_type] || 'bg-sand text-ash border-sand'}`}>
               {TYPE_LABEL[article.content_type] ?? article.content_type}
             </span>
           )}
@@ -156,6 +162,7 @@ export default function MyArticlePage() {
   }, [])
 
   const count = (status) => articles.filter((a) => a.status === status).length
+  const countByType = (type) => articles.filter((a) => a.content_type === type).length
 
   const attentionList = articles.filter((a) => a.status === 'REVISION' || a.status === 'REJECTED')
 
@@ -185,13 +192,17 @@ export default function MyArticlePage() {
                 Pantau dan kelola semua artikel serta kontribusimu di RIMBAHARI.
               </p>
             </div>
-            <Link
-              to="/articles/new"
-              className="btn-primary flex items-center gap-2 self-start md:self-auto flex-shrink-0"
-            >
-              <Plus size={15} />
-              Tulis Artikel
-            </Link>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3 self-stretch sm:self-auto">
+              <Link to="/articles/new" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-sand bg-white font-sans text-sm font-medium text-ink hover:border-clay/40 hover:text-clay transition-all flex-shrink-0 w-full sm:w-auto">
+                <Plus size={14} /> Tulis Artikel
+              </Link>
+              <Link to="/opinion/new" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-sand bg-white font-sans text-sm font-medium text-ink hover:border-clay/40 hover:text-clay transition-all flex-shrink-0 w-full sm:w-auto">
+                <PenLine size={14} /> Tulis Opini
+              </Link>
+              <Link to="/vignette/new" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-sand bg-white font-sans text-sm font-medium text-ink hover:border-forest/40 hover:text-forest transition-all flex-shrink-0 w-full sm:w-auto">
+                <FileText size={14} /> Tulis Vignette
+              </Link>
+            </div>
           </div>
 
           {/* ── Stat cards ──────────────────────────────────────── */}
@@ -200,6 +211,23 @@ export default function MyArticlePage() {
             <StatCard count={loading ? '—' : count('IN_REVIEW')} label="Direview"     hint="Menunggu keputusan editor" chip={STATUS.IN_REVIEW.chip} icon={STATUS.IN_REVIEW.icon} />
             <StatCard count={loading ? '—' : count('REVISION')}  label="Perlu Revisi" hint="Revisi diminta editor"     chip={STATUS.REVISION.chip}  icon={STATUS.REVISION.icon} />
             <StatCard count={loading ? '—' : count('PUBLISHED')} label="Diterbitkan"  hint="Tersedia untuk publik"     chip={STATUS.PUBLISHED.chip} icon={STATUS.PUBLISHED.icon} />
+          </div>
+
+          {/* ── Type statistics ─────────────────────────────────────── */}
+          <div className="flex flex-wrap gap-6 py-6 border-y border-sand/60">
+            <div className="flex flex-col gap-1">
+              <span className="font-sans text-[0.6rem] uppercase tracking-widest text-ash/60">Total Kontribusi</span>
+              <p className="font-serif text-h2 font-semibold text-ink">{articles.length} <span className="font-sans text-sm font-normal text-ash">Karya</span></p>
+            </div>
+            <div className="h-10 w-px bg-sand hidden md:block" />
+            <div className="flex gap-8">
+              {Object.entries(TYPE_LABEL).map(([type, label]) => (
+                <div key={type} className="flex flex-col gap-1">
+                  <span className="font-sans text-[0.6rem] uppercase tracking-widest text-ash/60">{label}</span>
+                  <p className="font-sans text-lg font-semibold text-ink">{loading ? '—' : countByType(type)}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* ── Needs attention ─────────────────────────────────── */}

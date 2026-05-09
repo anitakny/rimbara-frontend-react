@@ -19,6 +19,10 @@ const ALLOWED_MIME = [
 ]
 const MAX_SIZE_MB = 20
 
+const TYPE_LABEL = {
+  ARTIKEL: 'Artikel', OPINION: 'Opini', VIGNETTE: 'Vignette', CERITA: 'Cerita',
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -275,6 +279,7 @@ export default function ArticleEditPage() {
   const { id } = useParams()
 
   const [articleStatus, setArticleStatus] = useState('')
+  const [contentType, setContentType]     = useState('ARTIKEL')
   const [loading, setLoading]   = useState(true)
   const [file, setFile]         = useState(null)
   const [existingFile, setExistingFile] = useState(null)
@@ -283,8 +288,11 @@ export default function ArticleEditPage() {
 
   const [title, setTitle]       = useState('')
   const [abstract, setAbstract] = useState('')
+  const [thumbnail, setThumbnail]       = useState(null)
+  const [thumbPreview, setThumbPreview] = useState('')
   const [contributors, setContributors] = useState([])
   const [showSearch, setShowSearch]     = useState(false)
+  const thumbInputRef = useRef(null)
 
   const [submitting, setSubmitting]   = useState(false)
   const [deleting, setDeleting]       = useState(false)
@@ -306,9 +314,14 @@ export default function ArticleEditPage() {
       const { ok, status, data } = await articlesApi.detail(id)
       if (ok) {
         setArticleStatus(data.status)
+        setContentType(data.content_type || 'ARTIKEL')
         setTitle(data.title || '')
         setAbstract(data.abstract || '')
         setContributors(data.contributors?.map(c => ({ id: c.user.id, full_name: c.user.full_name, institution: '' })) || [])
+        
+        if (data.thumbnail_url) {
+          setThumbPreview(data.thumbnail_url)
+        }
         
         if (data.pdf_url) {
           setExistingFile({ name: data.pdf_url.split('/').pop() || 'Dokumen terlampir' })
@@ -351,6 +364,19 @@ export default function ArticleEditPage() {
     }
   }
 
+  const acceptThumbnail = (f) => {
+    if (!f.type.startsWith('image/')) return
+    if (f.size > 5 * 1024 * 1024) return
+    if (thumbPreview && !thumbPreview.startsWith('http')) URL.revokeObjectURL(thumbPreview)
+    setThumbnail(f); setThumbPreview(URL.createObjectURL(f))
+  }
+
+  const removeThumbnail = () => {
+    if (thumbPreview && !thumbPreview.startsWith('http')) URL.revokeObjectURL(thumbPreview)
+    setThumbnail(null); setThumbPreview('')
+    if (thumbInputRef.current) thumbInputRef.current.value = ''
+  }
+
   const removeFile = () => {
     setFile(null)
     setParsing(false)
@@ -377,6 +403,8 @@ export default function ArticleEditPage() {
     if (file) fd.append('file', file)
     if (title.trim())    fd.append('title', title.trim())
     if (abstract.trim()) fd.append('abstract', abstract.trim())
+    if (thumbnail)       fd.append('thumbnail_file', thumbnail)
+    if (!thumbnail && !thumbPreview) fd.append('thumbnail_url', '')
     
     // In Django, to replace a M2M list, we just send the new list.
     contributors.forEach((c) => fd.append('contributor_ids', c.id))
@@ -436,11 +464,11 @@ export default function ArticleEditPage() {
             </button>
             <div className="flex items-center gap-4 mb-3">
               <div className="h-px w-8 bg-clay/50" />
-              <span className="tag">Edit Artikel</span>
+              <span className="tag">Edit {TYPE_LABEL[contentType] || 'Artikel'}</span>
             </div>
             <h1 className="font-serif text-h1 font-semibold text-ink leading-tight">
               Edit{' '}
-              <em className="font-accent italic text-clay">Draft Anda</em>
+              <em className="font-accent italic text-clay">Draft {TYPE_LABEL[contentType] || 'Anda'}</em>
             </h1>
           </div>
 
@@ -507,6 +535,64 @@ export default function ArticleEditPage() {
                   <textarea value={abstract} onChange={(e) => setAbstract(e.target.value)} rows={4} className={`bg-bone border rounded-lg px-4 py-3 font-sans text-sm text-ink outline-none focus:ring-2 resize-none ${fieldErrors.abstract ? 'border-clay focus:border-clay focus:ring-clay/15' : 'border-sand focus:border-forest focus:ring-forest/15'}`} />
                   {fieldErrors.abstract && <p className="font-sans text-caption text-clay">{fieldErrors.abstract[0]}</p>}
                 </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-card border border-sand shadow-subtle overflow-hidden">
+              <div className="px-6 pt-5 pb-4 border-b border-sand">
+                <div className="flex items-center gap-3 mb-1"><div className="h-px w-6 bg-clay/50" /></div>
+                <h2 className="font-serif text-h3 font-semibold text-ink">
+                  Thumbnail <span className="text-clay text-sm font-sans font-normal">*</span>
+                </h2>
+                <p className="font-sans text-caption text-ash mt-0.5">
+                  Gambar cover (JPG, PNG, WebP — maks 5MB). Wajib diisi.
+                </p>
+              </div>
+              <div className="p-6">
+                {thumbPreview ? (
+                  <div className="flex items-start gap-4">
+                    <img src={thumbPreview} alt="Preview thumbnail"
+                      className="w-24 h-16 object-cover rounded-lg border border-sand flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-sans text-sm font-medium text-ink truncate mb-1">{thumbnail?.name || 'Thumbnail saat ini'}</p>
+                      <p className="font-sans text-caption text-moss mb-3">
+                        {thumbnail ? `${(thumbnail.size / (1024 * 1024)).toFixed(1)} MB` : 'Sudah terunggah'}
+                      </p>
+                      <div className="flex gap-3">
+                        <button type="button" onClick={() => thumbInputRef.current?.click()}
+                          className="font-sans text-xs text-forest hover:text-clay underline underline-offset-4 transition-colors duration-[240ms]">
+                          Ganti
+                        </button>
+                        <button type="button" onClick={removeThumbnail}
+                          className="font-sans text-xs text-ash hover:text-clay underline underline-offset-4 transition-colors duration-[240ms]">
+                          Hapus
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => thumbInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) acceptThumbnail(f) }}
+                    className="flex items-center gap-4 px-5 py-4 rounded-lg border-2 border-dashed border-sand
+                      hover:border-forest/40 hover:bg-sand/20 cursor-pointer transition-all duration-[240ms]"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-sand/60 flex items-center justify-center flex-shrink-0">
+                      <Plus size={18} className="text-ash" />
+                    </div>
+                    <div>
+                      <p className="font-sans text-sm font-medium text-ink">
+                        Seret gambar ke sini atau <span className="text-forest underline underline-offset-2">pilih file</span>
+                      </p>
+                      <p className="font-sans text-caption text-ash mt-0.5">JPG, PNG, WebP — maks 5MB</p>
+                    </div>
+                  </div>
+                )}
+                <input ref={thumbInputRef} type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) acceptThumbnail(f) }} />
               </div>
             </div>
 

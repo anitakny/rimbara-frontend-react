@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Clock, AlertCircle, CheckCircle2, XCircle, FileText, Download, Edit3 } from 'lucide-react'
+import { ArrowLeft, Clock, AlertCircle, CheckCircle2, XCircle, FileText, Download, Edit3, Eye, EyeOff, ExternalLink } from 'lucide-react'
 import Navbar from '../../components/Navbar'
 import { articlesApi, session } from '../../lib/api'
 import ArticleComment from '../../components/ArticlePage/ArticleComment'
@@ -17,7 +17,7 @@ const STATUS = {
 }
 
 const TYPE_LABEL = {
-  ARTIKEL: 'Artikel', OPINION: 'Opinion', VIGNETTE: 'Vignette', CERITA: 'Cerita',
+  ARTIKEL: 'Artikel', OPINION: 'Opini', VIGNETTE: 'Vignette', CERITA: 'Cerita',
 }
 
 // ---------------------------------------------------------------------------
@@ -63,6 +63,7 @@ export default function ArticleDetailPage() {
   const [article, setArticle] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')
+  const [showViewer, setShowViewer] = useState(false)
   const viewFiredRef          = useRef(false)   // guard against double-fire in React StrictMode
 
   useEffect(() => {
@@ -110,6 +111,26 @@ export default function ArticleDetailPage() {
       </div>
     )
   }
+
+  const handleDownload = async (url, filename) => {
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const blobUrl = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      window.open(url, '_blank')
+    }
+  }
+
+  const user = session.getUser()
+  const isReviewer = user?.role === 'ADMIN' || user?.role === 'REVIEWER' || user?.is_staff || user?.is_superuser
 
   const cfg = STATUS[article.status] ?? STATUS.DRAFT
   const StatusIcon = cfg.icon
@@ -248,41 +269,70 @@ export default function ArticleDetailPage() {
                 <p className="font-sans text-caption text-ash">Akan tersedia setelah artikel diterbitkan.</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                {/* Generated PDF — primary, shown to everyone */}
-                {article.pdf_url && (
-                  <a
-                    href={article.pdf_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-between gap-4 bg-white border border-sand rounded-card p-5 hover:border-forest/40 hover:shadow-subtle transition-all duration-[240ms] group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-forest/10 flex items-center justify-center flex-shrink-0">
-                        <FileText size={20} className="text-forest" />
+              <div className="flex flex-col gap-4">
+                {/* PDF Viewer Toggle Area */}
+                {(article.pdf_url || (article.original_file_url && article.original_file_type === 'PDF')) && (
+                  <div className="flex flex-col overflow-hidden bg-white border border-sand rounded-card shadow-subtle">
+                    {/* Header: Controls */}
+                    <div className="px-5 py-4 border-b border-sand flex items-center justify-between bg-bone/30">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-forest/10 flex items-center justify-center">
+                          <FileText size={16} className="text-forest" />
+                        </div>
+                        <div>
+                          <p className="font-sans text-sm font-medium text-ink leading-none">Dokumen Artikel</p>
+                          <p className="font-sans text-[0.6rem] text-ash uppercase tracking-widest mt-1">Versi PDF</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-sans text-sm font-medium text-ink group-hover:text-forest transition-colors">
-                          Baca / Unduh PDF
-                        </p>
-                        <p className="font-sans text-[0.65rem] text-ash uppercase tracking-widest mt-1">
-                          PDF · Dokumen Artikel
-                        </p>
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowViewer(!showViewer)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans text-xs font-medium transition-all duration-[240ms]
+                            ${showViewer 
+                              ? 'bg-forest text-bone border border-forest' 
+                              : 'bg-white text-forest border border-sand hover:border-forest/40'}`}
+                        >
+                          {showViewer ? <><EyeOff size={14} /> Tutup</> : <><Eye size={14} /> Baca Sekarang</>}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDownload(article.pdf_url || article.original_file_url, `${article.title || 'dokumen'}.pdf`)}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sand/30 text-ash border border-sand hover:text-ink hover:border-forest/40 transition-all duration-[240ms] font-sans text-xs font-medium"
+                        >
+                          <Download size={14} /> Unduh
+                        </button>
                       </div>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-sand/50 flex items-center justify-center text-ash group-hover:bg-forest/10 group-hover:text-forest transition-colors flex-shrink-0">
-                      <Download size={14} />
-                    </div>
-                  </a>
+
+                    {/* Content: Iframe Viewer */}
+                    {showViewer && (
+                      <div className="relative aspect-[4/5] sm:aspect-[4/5.5] w-full bg-sand/10 animate-in fade-in slide-in-from-top-2 duration-500">
+                        <iframe
+                          src={`${article.pdf_url || article.original_file_url}#toolbar=0`}
+                          className="w-full h-full border-none"
+                          title="PDF Viewer"
+                        />
+                        <div className="absolute bottom-4 right-4">
+                          <a 
+                            href={article.pdf_url || article.original_file_url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 bg-ink/80 backdrop-blur-md text-bone rounded-full shadow-lg hover:bg-ink transition-all text-xs font-medium"
+                          >
+                            <ExternalLink size={14} /> Buka di Tab Baru
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
 
-                {/* Original file — only for non-published (author reference); hidden once published */}
-                {article.original_file_url && article.status !== 'PUBLISHED' && (
-                  <a
-                    href={article.original_file_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-between gap-4 bg-white border border-sand rounded-card px-5 py-3.5 hover:border-forest/40 hover:shadow-subtle transition-all duration-[240ms] group"
+                {/* Original file — only for draft/review stages and limited to reviewers/authors. Never shown once published. */}
+                {article.original_file_url && article.status !== 'PUBLISHED' && (isReviewer || article.is_editable) && (
+                  <button
+                    onClick={() => handleDownload(article.original_file_url, `Original_${article.title || 'dokumen'}.${article.original_file_type?.toLowerCase() || 'docx'}`)}
+                    className="flex items-center justify-between gap-4 bg-white border border-sand rounded-card px-5 py-3.5 hover:border-forest/40 hover:shadow-subtle transition-all duration-[240ms] group w-full text-left"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-9 h-9 rounded-lg bg-sand/60 flex items-center justify-center flex-shrink-0">
@@ -290,17 +340,17 @@ export default function ArticleDetailPage() {
                       </div>
                       <div>
                         <p className="font-sans text-sm font-medium text-ink group-hover:text-forest transition-colors">
-                          Unduh File Asli
+                          Unduh {article.original_file_type || 'File'} Asli
                         </p>
                         <p className="font-sans text-[0.65rem] text-ash uppercase tracking-widest mt-0.5">
-                          {article.original_file_type ?? 'PDF'} · Dokumen original yang diunggah
+                          {article.original_file_type || 'FILE'} · Dokumen internal (Hanya Reviewer/Penulis)
                         </p>
                       </div>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-sand/50 flex items-center justify-center text-ash group-hover:bg-forest/10 group-hover:text-forest transition-colors flex-shrink-0">
                       <Download size={14} />
                     </div>
-                  </a>
+                  </button>
                 )}
               </div>
             )}

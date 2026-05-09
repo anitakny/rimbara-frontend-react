@@ -228,11 +228,11 @@ function UserSearchDropdown({ excluded, onSelect, onClose }) {
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-export default function ArticleUploadPage() {
+export default function OpinionUploadPage() {
   const navigate = useNavigate()
 
-  const contentType = 'ARTIKEL'
-  const label = 'Artikel'
+  const contentType = 'OPINION'
+  const label = 'Opini'
 
   // ── File ──────────────────────────────────────────────────────────────
   const [file, setFile]           = useState(null)

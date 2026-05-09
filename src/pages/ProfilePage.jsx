@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Building2, CalendarDays, MapPin, Users, FileText, Camera, Leaf, ArrowUpRight, ArrowLeft } from 'lucide-react'
+import { Building2, CalendarDays, MapPin, Users, FileText, Camera, Leaf, ArrowUpRight, ArrowLeft, Settings } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { profilesApi, articlesApi, session } from '../lib/api'
@@ -198,6 +198,7 @@ export default function ProfilePage() {
   }
 
   const initials    = getInitials(profile.full_name)
+  const isMe        = !userId || userId === sessionUser?.id
   const joinedYear  = sessionUser?.date_joined ? new Date(sessionUser.date_joined).getFullYear() : null
   const badge       = roleBadgeColors[profile.role_category] ?? roleBadgeColors['AKTIVIS']
 
@@ -355,6 +356,15 @@ export default function ProfilePage() {
                     <span className={`tag text-[0.9rem] py-0.5 ${badge.bg} ${badge.text} border ${badge.border}`}>
                       {roleCategoryLabels[profile.role_category]}
                     </span>
+                  )}
+                  {isMe && (
+                    <button
+                      onClick={() => navigate('/settings')}
+                      className="ml-auto w-8 h-8 rounded-lg border border-sand bg-bone flex items-center justify-center text-ash hover:text-forest hover:border-forest/40 transition-all duration-[240ms]"
+                      title="Edit Profil"
+                    >
+                      <Settings size={16} />
+                    </button>
                   )}
                 </div>
                 <h2 className="font-serif text-h1 font-semibold text-ink leading-tight mb-6">
