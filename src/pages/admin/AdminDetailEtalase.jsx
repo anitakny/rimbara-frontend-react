@@ -46,6 +46,7 @@ export default function AdminDetailEtalase() {
 
   const [loading, setLoading] = useState(isEditMode)
   const [saving, setSaving] = useState(false)
+  const [uploadStep, setUploadStep] = useState('') // '', 'INIT', 'PDF', 'COVER', 'CONFIRM'
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -122,56 +123,91 @@ export default function AdminDetailEtalase() {
   const handleSubmit = async () => {
     setShowConfirmModal(false)
     setSaving(true)
+    setUploadStep('INIT')
     setError('')
     setSuccess('')
 
-    const payload = new FormData()
-    payload.append('title', formData.title)
-    payload.append('pub_type', formData.pub_type)
-    payload.append('year', formData.year)
-    payload.append('description', formData.description)
-    
-    if (formData.file) payload.append('pdf_file', formData.file)
-    if (formData.cover_file) payload.append('cover_file', formData.cover_file)
-
     try {
-      let result
       if (isEditMode) {
-        result = await etalaseApi.update(id, payload)
+        // ── Edit Mode: Standard Multipart (Metadata & Cover only) ─────────────
+        const payload = new FormData()
+        payload.append('title', formData.title)
+        payload.append('pub_type', formData.pub_type)
+        payload.append('year', formData.year)
+        payload.append('description', formData.description)
+        if (formData.cover_file) payload.append('cover_file', formData.cover_file)
+        
+        const result = await etalaseApi.update(id, payload)
+        if (!result.ok) throw result
       } else {
-        result = await etalaseApi.create(payload)
+        // ── Create Mode: 4-Step GCP Handshake ────────────────────────────────
+        if (!formData.file) {
+          throw { data: { detail: 'File PDF wajib dipilih.' } }
+        }
+
+        // Step 1: Initiate
+        const initRes = await etalaseApi.initiateUpload({
+          pdf_content_type: formData.file.type,
+          cover_content_type: formData.cover_file?.type || null
+        })
+        if (!initRes.ok) throw initRes
+        const { publication_id, pdf_upload_url, pdf_path, cover_upload_url, cover_path } = initRes.data
+
+        // Step 2: Upload PDF Binary
+        setUploadStep('PDF')
+        const pdfUp = await etalaseApi.uploadToGcs(pdf_upload_url, formData.file)
+        if (!pdfUp.ok) throw pdfUp
+
+        // Step 3: Upload Cover Binary (if any)
+        if (formData.cover_file && cover_upload_url) {
+          setUploadStep('COVER')
+          const coverUp = await etalaseApi.uploadToGcs(cover_upload_url, formData.cover_file)
+          if (!coverUp.ok) throw coverUp
+        }
+
+        // Step 4: Confirm
+        setUploadStep('CONFIRM')
+        const confirmRes = await etalaseApi.confirmUpload({
+          publication_id,
+          title: formData.title,
+          pub_type: formData.pub_type,
+          year: parseInt(formData.year),
+          description: formData.description,
+          pdf_path,
+          cover_path: cover_path || null
+        })
+        if (!confirmRes.ok) throw confirmRes
       }
 
-      if (result.ok) {
-        setSuccess(isEditMode ? 'Publikasi berhasil diperbarui.' : 'Publikasi berhasil diunggah.')
-        setTimeout(() => navigate('/4Dm1n_d4Shb04Rd/display'), 1500)
-      } else {
-        let msg = 'Gagal menyimpan publikasi.'
-        if (result.data) {
-          if (typeof result.data === 'string') {
-            msg = result.data
-          } else if (result.data.detail) {
-            msg = result.data.detail
-          } else if (result.data.message) {
-            msg = result.data.message
-          } else if (result.data.errors) {
-             const firstKey = Object.keys(result.data.errors)[0]
-             msg = `${firstKey}: ${result.data.errors[firstKey][0]}`
-          } else {
-            const keys = Object.keys(result.data)
-            if (keys.length > 0) {
-              const firstKey = keys[0]
-              const errorVal = result.data[firstKey]
-              msg = Array.isArray(errorVal) ? `${firstKey}: ${errorVal[0]}` : `${firstKey}: ${errorVal}`
-            }
+      setSuccess(isEditMode ? 'Publikasi berhasil diperbarui.' : 'Publikasi berhasil diunggah.')
+      setTimeout(() => navigate('/4Dm1n_d4Shb04Rd/display'), 1500)
+    } catch (result) {
+      let msg = 'Gagal menyimpan publikasi.'
+      if (result && result.data) {
+        if (typeof result.data === 'string') {
+          msg = result.data
+        } else if (result.data.detail) {
+          msg = result.data.detail
+        } else if (result.data.message) {
+          msg = result.data.message
+        } else if (result.data.errors) {
+          const firstKey = Object.keys(result.data.errors)[0]
+          msg = `${firstKey}: ${result.data.errors[firstKey][0]}`
+        } else {
+          const keys = Object.keys(result.data)
+          if (keys.length > 0) {
+            const firstKey = keys[0]
+            const errorVal = result.data[firstKey]
+            msg = Array.isArray(errorVal) ? `${firstKey}: ${errorVal[0]}` : `${firstKey}: ${errorVal}`
           }
         }
-        setError(msg)
+      } else if (result instanceof Error) {
+        msg = result.message
       }
-    } catch (err) {
-      setError('Terjadi kesalahan sistem.')
+      setError(msg)
     } finally {
       setSaving(false)
+      setUploadStep('')
     }
   }
 
@@ -227,10 +263,25 @@ export default function AdminDetailEtalase() {
             <button 
               onClick={() => setShowConfirmModal(true)}
               disabled={saving}
-              className="px-8 py-2.5 bg-forest text-bone rounded-md text-sm font-bold shadow-warm hover:bg-forest/90 transition-all disabled:opacity-50 flex items-center gap-2"
+              className="px-8 py-2.5 bg-forest text-bone rounded-md text-sm font-bold shadow-warm hover:bg-forest/90 transition-all disabled:opacity-50 flex items-center gap-2 min-w-[140px] justify-center"
             >
-              {saving ? <div className="w-4 h-4 border-2 border-bone border-t-transparent rounded-full animate-spin" /> : <Save size={16} />}
-              {isEditMode ? 'Simpan' : 'Unggah'}
+              {saving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-bone border-t-transparent rounded-full animate-spin" />
+                  <span>
+                    {uploadStep === 'INIT' && 'Menyiapkan...'}
+                    {uploadStep === 'PDF' && 'Unggah PDF...'}
+                    {uploadStep === 'COVER' && 'Unggah Cover...'}
+                    {uploadStep === 'CONFIRM' && 'Menyimpan...'}
+                    {!uploadStep && 'Proses...'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  <span>{isEditMode ? 'Simpan' : 'Unggah'}</span>
+                </>
+              )}
             </button>
           </div>
         </header>
