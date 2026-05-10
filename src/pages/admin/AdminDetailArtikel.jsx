@@ -335,10 +335,7 @@ export default function AdminDetailArtikel() {
 
             <form 
               className="space-y-8" 
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (!parsing && !submitting) handleSubmit(e)
-              }}
+              onSubmit={(e) => e.preventDefault()}
             >
               
               {/* Primary Content Stack */}
