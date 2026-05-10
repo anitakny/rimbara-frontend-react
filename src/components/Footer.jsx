@@ -47,12 +47,10 @@ export default function Footer() {
               </span>
             </div>
             <p className="font-sans text-sm text-bone/55 leading-relaxed mb-6 max-w-xs">
-              <em>Research Initiative on Management of Biocultural Heritage and
-              Resilience Innovation.</em> Living knowledge hub masyarakat adat Indonesia.
+              <em>Rising Intergenerational Movements for Biocultural and Ancestral Heritage Resilience and Innovation.</em>
             </p>
             <div className="flex items-center gap-2 text-caption text-bone/40">
-              <Leaf size={12} />
-              <span className="uppercase tracking-widest">Nusantara Digital Archive</span>
+              <span className="uppercase tracking-widest text-xs">Dibuat dengan hormat untuk komunitas adat Nusantara.</span>
             </div>
           </div>
 
@@ -88,7 +86,7 @@ export default function Footer() {
             © 2025–2026 RIMBAHARI · BRWA Indonesia. Seluruh hak cipta dilindungi.
           </p>
           <p className="font-sans text-caption text-bone/25">
-            Dibuat dengan hormat untuk komunitas adat Nusantara.
+            Powered by BRWA & Departemen Antropologi UI
           </p>
         </div>
       </div>
