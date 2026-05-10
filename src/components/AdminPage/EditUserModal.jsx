@@ -86,9 +86,6 @@ export default function EditUserModal({ isOpen, onClose, onConfirm, user }) {
                       onChange={(e) => setRole(e.target.value)}
                       className="hidden"
                     />
-                    {role === r.value && (
-                      <div className="w-2 h-2 rounded-full bg-forest animate-pulse" />
-                    )}
                   </label>
                 ))}
               </div>
