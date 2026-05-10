@@ -108,8 +108,9 @@ export default function FlipbookViewer({ item, onClose }) {
   const prev = () => bookRef.current?.pageFlip().flipPrev()
   const next = () => bookRef.current?.pageFlip().flipNext()
 
-  const zoomIn  = () => setZoom(z => Math.min(1.5, parseFloat((z + 0.1).toFixed(1))))
-  const zoomOut = () => setZoom(z => Math.max(0.5, parseFloat((z - 0.1).toFixed(1))))
+  const zoomIn   = () => setZoom(z => Math.min(2.5, parseFloat((z + 0.2).toFixed(1))))
+  const zoomOut  = () => setZoom(z => Math.max(0.4, parseFloat((z - 0.2).toFixed(1))))
+  const resetZoom = () => setZoom(1.0)
 
   const handleDownload = async () => {
     if (downloading) return
@@ -176,19 +177,23 @@ export default function FlipbookViewer({ item, onClose }) {
             {/* Zoom */}
             <button
               onClick={zoomOut}
-              disabled={zoom <= 0.5}
+              disabled={zoom <= 0.4}
               title="Perkecil (−)"
               className="p-1.5 rounded-md text-bone/50 hover:text-bone hover:bg-white/10
                 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-[240ms]"
             >
               <ZoomOut size={15} />
             </button>
-            <span className="font-sans text-xs text-bone/40 font-tabular w-9 text-center select-none">
+            <button
+              onClick={resetZoom}
+              title="Reset ke 100%"
+              className="font-sans text-[10px] text-bone/40 font-bold tabular w-10 text-center select-none hover:text-clay transition-colors"
+            >
               {Math.round(zoom * 100)}%
-            </span>
+            </button>
             <button
               onClick={zoomIn}
-              disabled={zoom >= 1.5}
+              disabled={zoom >= 2.5}
               title="Perbesar (+)"
               className="p-1.5 rounded-md text-bone/50 hover:text-bone hover:bg-white/10
                 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-[240ms]"

@@ -29,6 +29,40 @@ export default function DisplayCategoryPage() {
     setFlipLoading(null)
   }
 
+  const handleDownload = async (item) => {
+    if (flipLoading) return
+    setFlipLoading(item.id)
+    try {
+      const { ok, data } = await etalaseApi.detail(item.id)
+      const detail = ok ? data : item
+      const pdfUrl = detail.file_url || detail.pdf_url
+      
+      if (!pdfUrl) {
+        alert('File tidak tersedia.')
+        return
+      }
+
+      // Increment count on backend
+      etalaseApi.download(detail.id).catch(() => {})
+
+      // Trigger actual download
+      const res = await fetch(pdfUrl)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = `${detail.title.replace(/[/\\]/g, '-')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setFlipLoading(null)
+    }
+  }
+
   useEffect(() => {
     if (!session.getAccess()) {
       navigate('/login', { replace: true })
@@ -38,7 +72,6 @@ export default function DisplayCategoryPage() {
       navigate('/display', { replace: true })
       return
     }
-    // Try to load real data; keep mock if API returns empty
     setLoading(true)
     etalaseApi.list({ pub_type: pubType }).then(({ ok, data }) => {
       if (ok) setPublications(Array.isArray(data) ? data : (data.results ?? []))
@@ -139,7 +172,15 @@ export default function DisplayCategoryPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {loading
               ? Array.from({ length: 9 }).map((_, i) => <CardSkeleton key={i} />)
-              : pageItems.map((item) => <DisplayCard key={item.id} item={item} onBaca={handleBaca} loadingId={flipLoading} />)
+              : pageItems.map((item) => (
+                  <DisplayCard 
+                    key={item.id} 
+                    item={item} 
+                    onBaca={handleBaca} 
+                    onDownload={handleDownload}
+                    loadingId={flipLoading} 
+                  />
+                ))
             }
           </div>
 

@@ -27,7 +27,7 @@ export const typeStyle = {
 // ---------------------------------------------------------------------------
 // Card
 // ---------------------------------------------------------------------------
-export function DisplayCard({ item, onBaca, loadingId }) {
+export function DisplayCard({ item, onBaca, onDownload, loadingId }) {
   const style    = typeStyle[item.pub_type] ?? typeStyle['LAINNYA']
   const catLabel = CATEGORIES.find(c => c.id === item.pub_type)?.label ?? item.pub_type
   const CatIcon  = CATEGORIES.find(c => c.id === item.pub_type)?.icon ?? BookOpen
@@ -38,7 +38,7 @@ export function DisplayCard({ item, onBaca, loadingId }) {
       hover:shadow-elevated transition-shadow duration-[240ms] overflow-hidden cursor-pointer flex flex-col">
 
       {/* Thumbnail */}
-      <div className="relative aspect-[16/10] overflow-hidden flex-shrink-0">
+      <div className="relative aspect-[16/10] overflow-hidden flex-shrink-0" onClick={() => canBaca ? onBaca?.(item) : onDownload?.(item)}>
         {item.cover_url ? (
           <img
             src={item.cover_url}
@@ -76,28 +76,35 @@ export function DisplayCard({ item, onBaca, loadingId }) {
 
         <div className="mt-auto pt-3 border-t border-sand flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 font-sans text-caption text-ash">
-              <Eye size={12} className="flex-shrink-0" />
-              {(item.views_count ?? 0).toLocaleString('id-ID')}
-            </span>
+            {canBaca && (
+              <span className="flex items-center gap-1 font-sans text-caption text-ash">
+                <Eye size={12} className="flex-shrink-0" />
+                {(item.views_count ?? 0).toLocaleString('id-ID')}
+              </span>
+            )}
             <span className="flex items-center gap-1 font-sans text-caption text-ash">
               <Download size={12} className="flex-shrink-0" />
               {(item.downloads_count ?? 0).toLocaleString('id-ID')}
             </span>
           </div>
           <button
-            onClick={() => canBaca && !loadingId && onBaca?.(item)}
+            onClick={() => {
+              if (loadingId) return
+              if (canBaca) {
+                onBaca?.(item)
+              } else {
+                onDownload?.(item)
+              }
+            }}
             disabled={!!loadingId}
             className={`inline-flex items-center gap-1 font-sans text-sm font-medium
-              transition-colors duration-[240ms] flex-shrink-0 ${
-                canBaca && !loadingId ? 'text-forest hover:text-clay cursor-pointer'
-                : canBaca && loadingId === item.id ? 'text-forest/60 cursor-wait'
-                : 'text-ash/30 cursor-default'
-              }`}
+              transition-colors duration-[240ms] flex-shrink-0 text-forest hover:text-clay cursor-pointer`}
           >
             {loadingId === item.id
               ? <><Loader2 size={13} className="animate-spin" />Memuat…</>
-              : <>Baca<ArrowUpRight size={14} /></>
+              : canBaca 
+                ? <>Baca<ArrowUpRight size={14} /></>
+                : <>Unduh File<Download size={13} className="ml-0.5" /></>
             }
           </button>
         </div>
@@ -133,7 +140,7 @@ export function CardSkeleton() {
 // ---------------------------------------------------------------------------
 const MAX_PER_ROW = 9
 
-function DisplayRow({ category, loading, onBaca, loadingId }) {
+function DisplayRow({ category, loading, onBaca, onDownload, loadingId }) {
   const [startIndex, setStartIndex] = useState(0)
   const itemsPerPage = 3
 
@@ -194,7 +201,7 @@ function DisplayRow({ category, loading, onBaca, loadingId }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {loading
           ? Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)
-          : currentItems.map((item) => <DisplayCard key={item.id} item={item} onBaca={onBaca} loadingId={loadingId} />)
+          : currentItems.map((item) => <DisplayCard key={item.id} item={item} onBaca={onBaca} onDownload={onDownload} loadingId={loadingId} />)
         }
       </div>
 
@@ -234,12 +241,45 @@ export default function DisplayPage() {
     setFlipLoading(null)
   }
 
+  const handleDownload = async (item) => {
+    if (flipLoading) return
+    setFlipLoading(item.id)
+    try {
+      const { ok, data } = await etalaseApi.detail(item.id)
+      const detail = ok ? data : item
+      const pdfUrl = detail.file_url || detail.pdf_url
+      
+      if (!pdfUrl) {
+        alert('File tidak tersedia.')
+        return
+      }
+
+      // Increment count on backend
+      etalaseApi.download(detail.id).catch(() => {})
+
+      // Trigger actual download
+      const res = await fetch(pdfUrl)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = `${detail.title.replace(/[/\\]/g, '-')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setFlipLoading(null)
+    }
+  }
+
   useEffect(() => {
     if (!session.getAccess()) {
       navigate('/login', { replace: true })
       return
     }
-    // Try to load real data; keep mock if API returns empty
     load()
   }, [])
 
@@ -311,7 +351,14 @@ export default function DisplayPage() {
 
           {/* Category rows */}
           {categoriesWithData.map((cat) => (
-            <DisplayRow key={cat.id} category={cat} loading={loading} onBaca={handleBaca} loadingId={flipLoading} />
+            <DisplayRow 
+              key={cat.id} 
+              category={cat} 
+              loading={loading} 
+              onBaca={handleBaca} 
+              onDownload={handleDownload}
+              loadingId={flipLoading} 
+            />
           ))}
 
           {/* Empty state */}
