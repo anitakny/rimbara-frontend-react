@@ -347,12 +347,15 @@ export default function AdminDetailEtalase() {
                     <div className="space-y-2">
                       <label className="text-[10px] uppercase font-bold text-ash tracking-widest px-1">Tahun Terbit</label>
                       <input 
-                        type="number"
-                        name="year"
-                        value={formData.year}
-                        onChange={handleInputChange}
-                        className="w-full bg-bone/30 border border-sand rounded-lg px-4 py-3 text-sm font-sans focus:outline-none focus:border-forest transition-all"
-                      />
+                      type="number" 
+                      value={formData.year}
+                      onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                      min="2000"
+                      max={new Date().getFullYear() + 1}
+                      disabled={loading || saving}
+                      className={`w-full bg-bone border border-sand rounded-xl px-4 py-3 text-sm font-sans focus:outline-none focus:border-forest transition-all ${loading ? 'opacity-50' : ''}`}
+                      placeholder="Contoh: 2025"
+                    />
                     </div>
                   </div>
 

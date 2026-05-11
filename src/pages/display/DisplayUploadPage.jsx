@@ -124,7 +124,7 @@ export default function DisplayUploadPage() {
     if (ok) {
       setTitle(data.title ?? '')
       setPubType(data.pub_type ?? '')
-      setYear(String(data.year ?? CURRENT_YEAR))
+      setYear(String(data.year || CURRENT_YEAR))
       setDescription(data.description ?? '')
       setExistingFileUrl(data.file_url ?? '')
       setExistingCoverUrl(data.cover_url ?? '')
@@ -295,9 +295,10 @@ export default function DisplayUploadPage() {
                     </label>
                     <input type="number" value={year} onChange={(e) => setYear(e.target.value)}
                       min={2000} max={CURRENT_YEAR + 1} required
+                      disabled={loading}
                       className={`bg-bone border rounded-lg px-4 py-3 font-sans text-sm text-ink placeholder:text-ash/40 outline-none focus:ring-2 transition-all duration-[240ms] font-tabular ${
                         fieldErrors.year ? 'border-clay focus:border-clay focus:ring-clay/15' : 'border-sand focus:border-forest focus:ring-forest/15'
-                      }`} />
+                      } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} />
                     {fieldErrors.year && <p className="font-sans text-caption text-clay">{fieldErrors.year[0]}</p>}
                   </div>
                 </div>
