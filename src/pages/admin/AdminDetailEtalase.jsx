@@ -156,13 +156,13 @@ export default function AdminDetailEtalase() {
 
         // Step 2: Upload PDF Binary
         setUploadStep('PDF')
-        const pdfUp = await etalaseApi.uploadToGcs(pdf_upload_url, formData.file)
+        const pdfUp = await etalaseApi.uploadToGcs(pdf_upload_url, formData.file, formData.file.type || 'application/pdf')
         if (!pdfUp.ok) throw pdfUp
 
         // Step 3: Upload Cover Binary (if any)
         if (formData.cover_file && cover_upload_url) {
           setUploadStep('COVER')
-          const coverUp = await etalaseApi.uploadToGcs(cover_upload_url, formData.cover_file)
+          const coverUp = await etalaseApi.uploadToGcs(cover_upload_url, formData.cover_file, formData.cover_file.type || 'image/jpeg')
           if (!coverUp.ok) throw coverUp
         }
 
