@@ -130,6 +130,7 @@ export default function ArticleDetailPage() {
   }
 
   const user = session.getUser()
+  const isAuthor = user?.id === article.author?.id
   const isReviewer = user?.role === 'ADMIN' || user?.role === 'REVIEWER' || user?.is_staff || user?.is_superuser
 
   const cfg = STATUS[article.status] ?? STATUS.DRAFT
@@ -329,7 +330,7 @@ export default function ArticleDetailPage() {
                 )}
 
                 {/* Original file — only for draft/review stages and limited to reviewers/authors. Never shown once published. */}
-                {article.original_file_url && article.status !== 'PUBLISHED' && (isReviewer || article.is_editable) && (
+                {article.original_file_url && article.status !== 'PUBLISHED' && (isReviewer || isAuthor || article.is_editable) && (
                   <button
                     onClick={() => handleDownload(article.original_file_url, `Original_${article.title || 'dokumen'}.${article.original_file_type?.toLowerCase() || 'docx'}`)}
                     className="flex items-center justify-between gap-4 bg-white border border-sand rounded-card px-5 py-3.5 hover:border-forest/40 hover:shadow-subtle transition-all duration-[240ms] group w-full text-left"
