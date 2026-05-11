@@ -285,6 +285,7 @@ export default function ArticleEditPage() {
   const [existingFile, setExistingFile] = useState(null)
   const [dragOver, setDragOver] = useState(false)
   const [parsing, setParsing]   = useState(false)
+  const [isEditable, setIsEditable] = useState(true)
 
   const [title, setTitle]       = useState('')
   const [abstract, setAbstract] = useState('')
@@ -314,6 +315,11 @@ export default function ArticleEditPage() {
       const { ok, status, data } = await articlesApi.detail(id)
       if (ok) {
         setArticleStatus(data.status)
+        setIsEditable(data.is_editable)
+        if (!data.is_editable) {
+          navigate(`/articles/${id}`, { replace: true })
+          return
+        }
         setContentType(data.content_type || 'ARTIKEL')
         setTitle(data.title || '')
         setAbstract(data.abstract || '')
@@ -379,6 +385,7 @@ export default function ArticleEditPage() {
 
   const removeFile = () => {
     setFile(null)
+    setExistingFile(null)
     setParsing(false)
     setParseError('')
     if (fileInputRef.current) fileInputRef.current.value = ''
