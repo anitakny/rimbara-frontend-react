@@ -141,6 +141,9 @@ export const homeApi = {
 // ---------------------------------------------------------------------------
 
 export const articlesApi = {
+  // Public — no auth required, 4 latest published articles for landing page
+  landing: () => _request('/api/articles/landing/'),
+
   feed: (content_type = '') => {
     const qs = content_type ? `?content_type=${content_type}` : ''
     return _authRequest(`/api/articles/${qs}`)
@@ -228,7 +231,25 @@ export const articlesApi = {
 // Etalase endpoints
 // ---------------------------------------------------------------------------
 
+// Pending etalase item — persists through the login / register / activate flow
+export const pendingEtalase = {
+  save: (pubType, itemId) =>
+    sessionStorage.setItem('rh_pending_etalase', JSON.stringify({ pubType, itemId })),
+  get: () => {
+    try { return JSON.parse(sessionStorage.getItem('rh_pending_etalase')) } catch { return null }
+  },
+  clear: () => sessionStorage.removeItem('rh_pending_etalase'),
+}
+
 export const etalaseApi = {
+  // Public variant — no auth header; used for landing page preview.
+  listPublic: ({ pub_type = '', page_size = 8 } = {}) => {
+    const qs = new URLSearchParams()
+    if (pub_type)  qs.append('pub_type', pub_type)
+    if (page_size) qs.append('page_size', page_size)
+    const q = qs.toString()
+    return _request(`/api/etalase/${q ? `?${q}` : ''}`)
+  },
   list: ({ pub_type = '', year = '', page = 1, page_size = 20 } = {}) => {
     const qs = new URLSearchParams()
     if (pub_type)  qs.append('pub_type', pub_type)
@@ -308,12 +329,26 @@ export const profilesApi = {
 // Contributor / Leaderboard endpoints
 // ---------------------------------------------------------------------------
 
+// Pending profile redirect — for landing page "click contributor → login → profile"
+export const pendingRedirect = {
+  save: (path) => sessionStorage.setItem('rh_pending_redirect', path),
+  get:  ()     => sessionStorage.getItem('rh_pending_redirect') ?? null,
+  clear:()     => sessionStorage.removeItem('rh_pending_redirect'),
+}
+
 export const contributorApi = {
   leaderboard: ({ limit = 10 } = {}) =>
     _authRequest(`/api/contributors/leaderboard/?limit=${limit}`),
 
   leaderboardAllTime: ({ limit = 10 } = {}) =>
     _authRequest(`/api/contributors/leaderboard/all-time/?limit=${limit}`),
+
+  // Public variants — used on the landing page (no auth header)
+  leaderboardPublic: ({ limit = 6 } = {}) =>
+    _request(`/api/contributors/leaderboard/?limit=${limit}`),
+
+  leaderboardAllTimePublic: ({ limit = 6 } = {}) =>
+    _request(`/api/contributors/leaderboard/all-time/?limit=${limit}`),
 
   leaderboardHistory: ({ month, year } = {}) => {
     const qs = month && year ? `?month=${month}&year=${year}` : ''
