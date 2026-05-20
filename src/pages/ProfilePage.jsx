@@ -349,18 +349,20 @@ export default function ProfilePage() {
 
               {/* Right — about panel */}
               <div className="flex-1 min-w-0 bg-white rounded-card border border-sand shadow-subtle p-6 md:p-8">
-                <div className="flex items-center gap-4 mb-5">
-                  <div className="h-px w-8 bg-clay/50" />
-                  <span className="tag">Profil Kontributor</span>
-                  {profile.role_category && (
-                    <span className={`tag text-[0.9rem] py-0.5 ${badge.bg} ${badge.text} border ${badge.border}`}>
-                      {roleCategoryLabels[profile.role_category]}
-                    </span>
-                  )}
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <div className="h-px w-6 bg-clay/50 flex-shrink-0" />
+                    <span className="tag">Profil Kontributor</span>
+                    {profile.role_category && (
+                      <span className={`tag py-0.5 ${badge.bg} ${badge.text} border ${badge.border}`}>
+                        {roleCategoryLabels[profile.role_category]}
+                      </span>
+                    )}
+                  </div>
                   {isMe && (
                     <button
                       onClick={() => navigate('/settings')}
-                      className="ml-auto w-8 h-8 rounded-lg border border-sand bg-bone flex items-center justify-center text-ash hover:text-forest hover:border-forest/40 transition-all duration-[240ms]"
+                      className="flex-shrink-0 w-8 h-8 rounded-lg border border-sand bg-bone flex items-center justify-center text-ash hover:text-forest hover:border-forest/40 transition-all duration-[240ms]"
                       title="Edit Profil"
                     >
                       <Settings size={16} />
