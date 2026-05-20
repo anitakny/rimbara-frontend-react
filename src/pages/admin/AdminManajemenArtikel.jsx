@@ -171,12 +171,11 @@ export default function AdminManajemenArtikel() {
   const confirmDelete = async () => {
     try {
       if (isBulkDelete) {
-        for (const id of selectedIds) {
-          await articlesApi.adminDelete(id)
-        }
-        setArticles(prev => prev.filter(a => !selectedIds.includes(a.id)))
-        setSelectedIds([])
-        setBulkAction('')
+        const results = await Promise.all(selectedIds.map(id => articlesApi.adminDelete(id)))
+        const deletedIds = selectedIds.filter((_, i) => results[i].ok)
+        setArticles(prev => prev.filter(a => !deletedIds.includes(a.id)))
+        setSelectedIds(prev => prev.filter(id => !deletedIds.includes(id)))
+        if (deletedIds.length > 0) setBulkAction('')
       } else if (articleToDelete) {
         const { ok } = await articlesApi.adminDelete(articleToDelete.id)
         if (ok) {
@@ -538,12 +537,12 @@ export default function AdminManajemenArtikel() {
         </div>
       </main>
 
-      <ConfirmationModal 
+      <ConfirmationModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDelete}
         title="Konfirmasi Penghapusan"
-        message={isBulkDelete 
+        message={isBulkDelete
           ? `Apakah Anda yakin ingin menghapus ${selectedIds.length} artikel yang dipilih secara permanen? Tindakan ini tidak dapat dibatalkan.`
           : `Apakah Anda yakin ingin menghapus artikel ini secara permanen? Tindakan ini tidak dapat dibatalkan.`
         }

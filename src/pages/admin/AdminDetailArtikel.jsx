@@ -36,7 +36,6 @@ export default function AdminDetailArtikel() {
   // ---------------------------------------------------------------------------
   const [formData, setFormData] = useState({
     title: '',
-    abstract: '',
     content: '',
     content_type: 'ARTIKEL',
     status: 'DRAFT',
@@ -74,7 +73,6 @@ export default function AdminDetailArtikel() {
         if (ok) {
           setFormData({
             title: data.title || '',
-            abstract: data.abstract || '',
             content: data.content || '',
             content_type: data.content_type || 'ARTIKEL',
             status: data.status || 'DRAFT',
@@ -149,7 +147,6 @@ export default function AdminDetailArtikel() {
         setFormData(prev => ({
           ...prev,
           title: art.title || prev.title,
-          abstract: art.abstract || prev.abstract,
           content: art.content || prev.content
         }))
         
@@ -207,7 +204,6 @@ export default function AdminDetailArtikel() {
 
     const payload = new FormData()
     payload.append('title', formData.title)
-    payload.append('abstract', formData.abstract)
     payload.append('content_type', formData.content_type)
     
     // Hanya kirim field ini jika dalam mode EDIT atau sudah ada draftId (hasil parsing)
@@ -434,25 +430,6 @@ export default function AdminDetailArtikel() {
                       )}
                     </div>
                   </div>
-                </section>
-
-                {/* Abstract Section */}
-                <section className="bg-white rounded-lg border border-sand p-8 shadow-subtle space-y-4">
-                  <div className="flex items-center gap-3 pb-4 mb-2">
-                    <div className="p-2 text-forest">
-                      <AlignLeft size={20} />
-                    </div>
-                    <label className="text-[10px] uppercase font-bold text-ash tracking-widest">Abstrak / Ringkasan</label>
-                  </div>
-                  <textarea 
-                    name="abstract"
-                    value={formData.abstract}
-                    onChange={handleInputChange}
-                    rows={4}
-                    placeholder="Tuliskan ringkasan singkat artikel di sini..."
-                    className="w-full bg-bone/30 border border-sand rounded-lg px-6 py-4 text-sm font-sans leading-relaxed focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/5 transition-all"
-                  />
-                  <p className="text-[10px] text-ash/60 px-1 italic">Maksimal 500 karakter untuk ringkasan di halaman feed.</p>
                 </section>
 
                 {isEditMode && (

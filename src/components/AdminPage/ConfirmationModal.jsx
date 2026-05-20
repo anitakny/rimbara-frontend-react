@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { X, AlertCircle, Trash2, CheckCircle2, Loader2 } from 'lucide-react'
 
 export default function ConfirmationModal({ 
@@ -15,15 +15,24 @@ export default function ConfirmationModal({
   confirmDisabled = false
 }) {
   
+  const [submitting, setSubmitting] = useState(false)
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
+      setSubmitting(false)
     }
     return () => { document.body.style.overflow = '' }
   }, [isOpen])
+
+  const handleConfirm = () => {
+    if (submitting || loading || confirmDisabled) return
+    setSubmitting(true)
+    onConfirm()
+  }
 
   if (!isOpen) return null
 
@@ -107,8 +116,8 @@ export default function ConfirmationModal({
               {cancelText}
             </button>
             <button
-              onClick={onConfirm}
-              disabled={loading || confirmDisabled}
+              onClick={handleConfirm}
+              disabled={submitting || loading || confirmDisabled}
               className={`flex-1 px-6 py-3 rounded-xl font-sans text-sm font-bold text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${theme.btn} disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100`}
             >
               {loading ? (

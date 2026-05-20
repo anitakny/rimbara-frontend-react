@@ -168,12 +168,11 @@ export default function AdminManajemenEtalase() {
   const confirmDelete = async () => {
     try {
       if (isBulkDelete) {
-        for (const id of selectedIds) {
-          await etalaseApi.delete(id)
-        }
-        setPublications(prev => prev.filter(p => !selectedIds.includes(p.id)))
-        setSelectedIds([])
-        setBulkAction('')
+        const results = await Promise.all(selectedIds.map(id => etalaseApi.delete(id)))
+        const deletedIds = selectedIds.filter((_, i) => results[i].ok)
+        setPublications(prev => prev.filter(p => !deletedIds.includes(p.id)))
+        setSelectedIds(prev => prev.filter(id => !deletedIds.includes(id)))
+        if (deletedIds.length > 0) setBulkAction('')
       } else if (pubToDelete) {
         const { ok } = await etalaseApi.delete(pubToDelete.id)
         if (ok) {
@@ -225,13 +224,6 @@ export default function AdminManajemenEtalase() {
   return (
     <div className="flex h-screen bg-[#FDFCF9]">
       <AdminSidebar />
-      <ConfirmationModal 
-        isOpen={showDeleteModal} 
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={confirmDelete}
-        title="Hapus Publikasi"
-        message={`Apakah Anda yakin ingin menghapus ${isBulkDelete ? selectedIds.length + ' publikasi' : 'publikasi ini'}?`}
-      />
 
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header Section */}
