@@ -28,6 +28,8 @@ const roleLabels = {
   AKTIVIS:     'Aktivis',
 }
 
+const COMMUNITY_ROLES = new Set(['MAHASISWA', 'AKADEMISI', 'PEMUDA_ADAT', 'AKTIVIS'])
+
 function getInitials(name) {
   if (!name) return '?'
   const parts = name.trim().split(/\s+/)
@@ -123,11 +125,6 @@ function ArticleCard({ article, onClick }) {
           {article.title}
         </h2>
 
-        {/* Abstract — italic accent */}
-        <p className="font-accent italic text-body text-ash/80 leading-relaxed line-clamp-3 mb-5">
-          {article.abstract}
-        </p>
-
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-sand">
           <div className="flex items-center gap-4">
@@ -202,6 +199,7 @@ export default function FeedPage() {
 
   const loadFeed = async (contentType) => {
     setLoading(true)
+    const currentUser = session.getUser()
     // Default "Semua" tab uses personalized homeApi feed (includes recommendation_reason).
     // Filtered tabs fall back to articlesApi to keep content-type filtering working.
     const { ok, data } = contentType
@@ -211,9 +209,20 @@ export default function FeedPage() {
       const raw = Array.isArray(data) ? data : (data.results ?? [])
       // homeApi returns [{article, recommendation_reason, relevance_score}]
       // articlesApi returns articles directly — handle both
-      setArticles(raw.map(item =>
-        item.article ? { ...item.article, recommendation_reason: item.recommendation_reason } : item
-      ))
+      setArticles(raw.map(item => {
+        const article = item.article
+          ? { ...item.article, recommendation_reason: item.recommendation_reason }
+          : item
+          
+        if (
+          currentUser?.id &&
+          article.author?.id === currentUser.id &&
+          COMMUNITY_ROLES.has(currentUser.role)
+        ) {
+          return { ...article, author: { ...article.author, role_category: currentUser.role } }
+        }
+        return article
+      }))
     }
     setLoading(false)
   }

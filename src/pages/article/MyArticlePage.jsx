@@ -95,10 +95,9 @@ function ArticleRow({ article }) {
           {article.title}
         </h3>
 
-        {/* Reviewer note or abstract */}
-        {(article.reviewer_note || article.abstract) && (
+        {article.reviewer_note && (
           <p className="font-accent italic text-caption text-ash/70 leading-relaxed line-clamp-2 mt-1">
-            "{article.reviewer_note || article.abstract}"
+            "{article.reviewer_note}"
           </p>
         )}
       </div>

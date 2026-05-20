@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Upload, X, Plus, UserRound, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles, Search, Image } from 'lucide-react'
+import { Upload, X, Plus, UserRound, FileText, AlertCircle, CheckCircle2, Loader2, Search, Image } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import { articlesApi, profilesApi, session } from '../../lib/api'
@@ -248,7 +248,6 @@ export default function ArticleUploadPage() {
 
   // ── Metadata fields ───────────────────────────────────────────────────
   const [title, setTitle]       = useState('')
-  const [abstract, setAbstract] = useState('')
 
   // ── Thumbnail ─────────────────────────────────────────────────────────
   const [thumbnail, setThumbnail]       = useState(null)
@@ -291,14 +290,14 @@ export default function ArticleUploadPage() {
     setFile(f); setFileError('')
     // Reset analysis state when a new file is chosen
     setParsed(false); setParseError('')
-    setTitle(''); setAbstract('')
+    setTitle('')
     if (draftId) { articlesApi.deleteArticle(draftId).catch(() => {}); setDraftId(null) }
   }
 
   const removeFile = () => {
     setFile(null); setFileError('')
     setParsed(false); setParseError('')
-    setTitle(''); setAbstract('')
+    setTitle('')
     if (draftId) { articlesApi.deleteArticle(draftId).catch(() => {}); setDraftId(null) }
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -319,8 +318,7 @@ export default function ArticleUploadPage() {
     const { ok, data } = await articlesApi.create(fd)
     if (ok) {
       setDraftId(data.article.id)
-      setTitle(data.article.title    ?? '')
-      setAbstract(data.article.abstract ?? '')
+      setTitle(data.article.title ?? '')
       setParsed(true)
     } else {
       setParseError(data?.error ?? data?.detail ?? 'Gagal menganalisis dokumen.')
@@ -340,7 +338,6 @@ export default function ArticleUploadPage() {
       // Draft already created by "Analisis" — update metadata and thumbnail if present
       const fd = new FormData()
       fd.append('title', title.trim())
-      fd.append('abstract', abstract.trim())
       if (thumbnail) fd.append('thumbnail_file', thumbnail)
 
       const patch = await articlesApi.update(articleId, fd)
@@ -354,9 +351,8 @@ export default function ArticleUploadPage() {
       const fd = new FormData()
       fd.append('content_type', contentType)
       fd.append('file', file)
-      if (title.trim())    fd.append('title',    title.trim())
-      if (abstract.trim()) fd.append('abstract', abstract.trim())
-      if (thumbnail)       fd.append('thumbnail_file', thumbnail)
+      if (title.trim()) fd.append('title', title.trim())
+      if (thumbnail)    fd.append('thumbnail_file', thumbnail)
       contributors.forEach((c) => fd.append('contributor_ids', c.id))
 
       const { ok, status, data } = await articlesApi.create(fd)
@@ -497,7 +493,7 @@ export default function ArticleUploadPage() {
                       }
                     </button>
                     {parsed && (
-                      <button type="button" onClick={() => { setParsed(false); setTitle(''); setAbstract(''); if (draftId) { articlesApi.deleteArticle(draftId).catch(() => {}); setDraftId(null) } }}
+                      <button type="button" onClick={() => { setParsed(false); setTitle(''); if (draftId) { articlesApi.deleteArticle(draftId).catch(() => {}); setDraftId(null) } }}
                         className="font-sans text-xs text-ash hover:text-clay underline underline-offset-4 transition-colors duration-[240ms]">
                         Analisis ulang
                       </button>
@@ -537,20 +533,8 @@ export default function ArticleUploadPage() {
                   {fieldErrors.title && <p className="font-sans text-caption text-clay">{fieldErrors.title[0]}</p>}
                 </div>
 
-                {/* Abstract */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-sans text-caption uppercase tracking-widest text-ash font-medium">Abstrak</label>
-                  <textarea value={abstract} onChange={(e) => setAbstract(e.target.value)}
-                    placeholder={parsed ? '' : 'Akan diisi otomatis setelah analisis, atau isi manual'}
-                    rows={4} maxLength={3000}
-                    className={`bg-bone border rounded-lg px-4 py-3 font-sans text-sm text-ink placeholder:text-ash/30 outline-none focus:ring-2 transition-all duration-[240ms] resize-none ${
-                      fieldErrors.abstract ? 'border-clay focus:border-clay focus:ring-clay/15' : 'border-sand focus:border-forest focus:ring-forest/15'
-                    }`} />
-                  {fieldErrors.abstract && <p className="font-sans text-caption text-clay">{fieldErrors.abstract[0]}</p>}
-                </div>
-
                 <span className="font-sans text-[0.6rem] uppercase tracking-widest text-ash/60">
-                  {parsed ? 'Diekstrak otomatis — periksa dan perbaiki jika perlu.' : 'Klik "Analisis Dokumen" untuk mengisi otomatis dari file.'}
+                  {parsed ? 'Judul diekstrak otomatis — periksa dan perbaiki jika perlu.' : 'Klik "Analisis Dokumen" untuk mengisi otomatis dari file.'}
                 </span>
               </div>
             </div>

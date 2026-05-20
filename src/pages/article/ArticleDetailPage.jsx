@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Clock, AlertCircle, CheckCircle2, XCircle, FileText, Download, Edit3, Eye, EyeOff, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Clock, AlertCircle, CheckCircle2, XCircle, FileText, Download, Edit3, Eye, EyeOff } from 'lucide-react'
 import Navbar from '../../components/Navbar'
 import { articlesApi, session } from '../../lib/api'
 import ArticleComment from '../../components/ArticlePage/ArticleComment'
+import PdfScrollViewer from '../../components/ArticlePage/PdfScrollViewer'
 
 // ---------------------------------------------------------------------------
 // Config
@@ -190,6 +191,17 @@ export default function ArticleDetailPage() {
             )}
           </header>
 
+          {/* ── Thumbnail ── */}
+          {article.thumbnail_url && (
+            <div className="mb-8 w-full overflow-hidden rounded-card shadow-subtle">
+              <img
+                src={article.thumbnail_url}
+                alt={article.title}
+                className="w-full object-cover max-h-[420px]"
+              />
+            </div>
+          )}
+
           {/* ── Reviewer Note ── */}
           {article.reviewer_note && (
             <div className={`mb-8 p-5 rounded-card border ${article.status === 'REJECTED' ? 'bg-sienna/5 border-sienna/20' : 'bg-clay/5 border-clay/20'}`}>
@@ -206,21 +218,6 @@ export default function ArticleDetailPage() {
               </div>
             </div>
           )}
-
-          {/* ── Abstract ── */}
-          <section className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-px w-6 bg-clay/50" />
-              <h2 className="font-serif text-h3 font-semibold text-ink">Abstrak</h2>
-            </div>
-            {article.abstract ? (
-              <p className="font-sans text-body text-ink/90 leading-relaxed whitespace-pre-wrap bg-white rounded-card border border-sand p-6 shadow-subtle text-justify">
-                {article.abstract}
-              </p>
-            ) : (
-              <p className="font-sans text-body text-ash italic">Tidak ada abstrak.</p>
-            )}
-          </section>
 
           {/* ── Contributors List ── */}
           {article.contributors && article.contributors.length > 0 && (
@@ -306,25 +303,9 @@ export default function ArticleDetailPage() {
                       </div>
                     </div>
 
-                    {/* Content: Iframe Viewer */}
+                    {/* Content: Scrollable PDF viewer (works on mobile) */}
                     {showViewer && (
-                      <div className="relative aspect-[4/5] sm:aspect-[4/5.5] w-full bg-sand/10 animate-in fade-in slide-in-from-top-2 duration-500">
-                        <iframe
-                          src={`${article.pdf_url || article.original_file_url}#toolbar=0`}
-                          className="w-full h-full border-none"
-                          title="PDF Viewer"
-                        />
-                        <div className="absolute bottom-4 right-4">
-                          <a 
-                            href={article.pdf_url || article.original_file_url} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="flex items-center gap-2 px-4 py-2 bg-ink/80 backdrop-blur-md text-bone rounded-full shadow-lg hover:bg-ink transition-all text-xs font-medium"
-                          >
-                            <ExternalLink size={14} /> Buka di Tab Baru
-                          </a>
-                        </div>
-                      </div>
+                      <PdfScrollViewer url={article.pdf_url || article.original_file_url} />
                     )}
                   </div>
                 )}

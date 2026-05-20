@@ -385,18 +385,6 @@ export default function ArticlePage() {
                         {isClaimed && (
                           <div className="border-t border-sand bg-sand/10 p-5 flex flex-col gap-4">
 
-                            {/* Abstract */}
-                            {article.abstract && (
-                              <div className="p-4 bg-white rounded-lg border border-sand">
-                                <p className="font-sans text-[0.65rem] uppercase tracking-widest text-ash/60 mb-2">
-                                  Abstrak
-                                </p>
-                                <p className="font-sans italic text-body text-ash/80 leading-relaxed">
-                                  {article.abstract}
-                                </p>
-                              </div>
-                            )}
-
                             {/* Article metadata */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                               {[

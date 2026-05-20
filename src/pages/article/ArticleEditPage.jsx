@@ -288,7 +288,6 @@ export default function ArticleEditPage() {
   const [isEditable, setIsEditable] = useState(true)
 
   const [title, setTitle]       = useState('')
-  const [abstract, setAbstract] = useState('')
   const [thumbnail, setThumbnail]       = useState(null)
   const [thumbPreview, setThumbPreview] = useState('')
   const [contributors, setContributors] = useState([])
@@ -322,7 +321,6 @@ export default function ArticleEditPage() {
         }
         setContentType(data.content_type || 'ARTIKEL')
         setTitle(data.title || '')
-        setAbstract(data.abstract || '')
         setContributors(data.contributors?.map(c => ({ id: c.user.id, full_name: c.user.full_name, institution: '' })) || [])
         
         if (data.thumbnail_url) {
@@ -408,9 +406,8 @@ export default function ArticleEditPage() {
 
     const fd = new FormData()
     if (file) fd.append('file', file)
-    if (title.trim())    fd.append('title', title.trim())
-    if (abstract.trim()) fd.append('abstract', abstract.trim())
-    if (thumbnail)       fd.append('thumbnail_file', thumbnail)
+    if (title.trim()) fd.append('title', title.trim())
+    if (thumbnail)    fd.append('thumbnail_file', thumbnail)
     if (!thumbnail && !thumbPreview) fd.append('thumbnail_url', '')
     
     // In Django, to replace a M2M list, we just send the new list.
@@ -536,11 +533,6 @@ export default function ArticleEditPage() {
                   <label className="font-sans text-caption uppercase tracking-widest text-ash font-medium">Judul</label>
                   <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={255} className={`bg-bone border rounded-lg px-4 py-3 font-sans text-sm text-ink outline-none focus:ring-2 ${fieldErrors.title ? 'border-clay focus:border-clay focus:ring-clay/15' : 'border-sand focus:border-forest focus:ring-forest/15'}`} />
                   {fieldErrors.title && <p className="font-sans text-caption text-clay">{fieldErrors.title[0]}</p>}
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-sans text-caption uppercase tracking-widest text-ash font-medium">Abstrak</label>
-                  <textarea value={abstract} onChange={(e) => setAbstract(e.target.value)} rows={4} className={`bg-bone border rounded-lg px-4 py-3 font-sans text-sm text-ink outline-none focus:ring-2 resize-none ${fieldErrors.abstract ? 'border-clay focus:border-clay focus:ring-clay/15' : 'border-sand focus:border-forest focus:ring-forest/15'}`} />
-                  {fieldErrors.abstract && <p className="font-sans text-caption text-clay">{fieldErrors.abstract[0]}</p>}
                 </div>
               </div>
             </div>
