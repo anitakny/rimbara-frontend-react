@@ -130,10 +130,6 @@ export default function LeaderboardCard() {
                   </p>
                 </div>
 
-                {/* Score */}
-                <span className="font-serif text-sm font-semibold text-forest flex-shrink-0 font-tabular">
-                  {(entry.total_score ?? 0).toLocaleString('id-ID')}
-                </span>
               </div>
             )
           })}

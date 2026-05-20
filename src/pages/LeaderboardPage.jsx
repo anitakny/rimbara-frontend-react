@@ -27,11 +27,6 @@ const RANK_ACCENT = {
   3: { badge: 'bg-clay/10 border-clay/20 text-clay',            dot: 'bg-clay/60',       score: 'text-clay'       },
 }
 
-const WEIGHTS = {
-  AUTHOR_ARTICLE: 10, AUTHOR_VIEW: 1, AUTHOR_COMMENT: 3,
-  CONTRIB_ARTICLE: 5, CONTRIB_COMMENT: 1,
-}
-
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
@@ -91,12 +86,7 @@ function PodiumCard({ entry, onClick }) {
         <p className="font-sans text-[0.65rem] text-ash mb-3 line-clamp-1 max-w-full">{entry.user.institution}</p>
       )}
 
-      <div className="mt-auto pt-3 border-t border-sand w-full">
-        <span className={`font-serif text-h1 font-semibold font-tabular block ${accent.score}`}>
-          {entry.total_score.toLocaleString('id-ID')}
-        </span>
-        <span className="font-sans text-[0.6rem] text-ash uppercase tracking-wider">poin</span>
-      </div>
+      <div className="mt-auto pt-3 border-t border-sand w-full" />
 
       <div className="flex items-center justify-center gap-3 mt-3 flex-wrap">
         <span className="flex items-center gap-0.5 font-sans text-[0.6rem] text-ash">
@@ -169,12 +159,6 @@ function RankRow({ entry, onClick }) {
         )}
       </div>
 
-      <div className="text-right flex-shrink-0">
-        <span className="font-serif text-h3 font-semibold text-forest font-tabular">
-          {entry.total_score.toLocaleString('id-ID')}
-        </span>
-        <p className="font-sans text-[0.6rem] text-ash">poin</p>
-      </div>
     </div>
   )
 }
@@ -322,23 +306,6 @@ export default function LeaderboardPage() {
             )}
           </div>
 
-          {/* Scoring formula */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-10 p-4 bg-white rounded-card border border-sand shadow-subtle">
-            <span className="font-sans text-caption text-ash font-medium">Formula skor:</span>
-            <div className="flex items-center gap-2">
-              <span className="tag text-[0.6rem] bg-forest/10 text-forest border-forest/20">Penulis</span>
-              <span className="font-sans text-[0.7rem] text-ash">
-                {WEIGHTS.AUTHOR_ARTICLE} pts/artikel · {WEIGHTS.AUTHOR_VIEW} pt/view · {WEIGHTS.AUTHOR_COMMENT} pts/komentar
-              </span>
-            </div>
-            <div className="h-3 w-px bg-sand hidden md:block" />
-            <div className="flex items-center gap-2">
-              <span className="tag text-[0.6rem] bg-moss/10 text-moss border-moss/20">Kontributor</span>
-              <span className="font-sans text-[0.7rem] text-ash">
-                {WEIGHTS.CONTRIB_ARTICLE} pts/artikel · {WEIGHTS.CONTRIB_COMMENT} pt/komentar
-              </span>
-            </div>
-          </div>
 
           {/* Main content */}
           {loading ? (
