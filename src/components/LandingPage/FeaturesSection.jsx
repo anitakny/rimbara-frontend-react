@@ -48,8 +48,8 @@ const features = [
     badge: 'Manajemen Media',
     title: 'Upload Foto, Video & Audio',
     description:
-      'Upload dan kelola berbagai format media dokumentasi — foto potret, video ritual, rekaman audio kehati — tersimpan aman di Supabase Storage dan terhubung ke konten komunitas.',
-    tags: ['Foto', 'Video', 'Audio', 'Supabase Storage'],
+      'Upload dan kelola berbagai format media dokumentasi — foto potret, video ritual, rekaman audio kehati — tersimpan aman di Google Storage dan terhubung ke konten komunitas.',
+    tags: ['Foto', 'Video', 'Audio', 'Google Storage'],
   },
   {
     id: 'FR-08',
