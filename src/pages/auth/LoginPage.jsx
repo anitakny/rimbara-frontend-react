@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Eye, EyeOff, ArrowLeft, Leaf, AlertCircle, MailCheck } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { authApi, session } from '../../lib/api'
+import { authApi, session, pendingEtalase, pendingRedirect } from '../../lib/api'
 
 function GoogleIcon() {
   return (
@@ -24,14 +24,17 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [emailNotVerified, setEmailNotVerified] = useState(false)
 
-  // ── Handle Google Callback ──────────────────────────────────────────────
+  // ── Redirect if already authenticated ─────────────────────────────────
   useEffect(() => {
+    if (session.getAccess()) {
+      navigate('/home', { replace: true })
+      return
+    }
+
+    // Handle Google OAuth callback
     const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
-
-    if (code) {
-      handleGoogleCallback(code)
-    }
+    if (code) handleGoogleCallback(code)
   }, [])
 
   const handleGoogleCallback = async (code) => {
@@ -46,7 +49,15 @@ export default function LoginPage() {
 
     if (ok) {
       session.save(data.tokens.access, data.tokens.refresh, data.user)
-      navigate(data.user.is_profile_complete ? '/home' : '/activate')
+      if (data.user.is_profile_complete) {
+        const etalase = pendingEtalase.get()
+        const redirect = pendingRedirect.get()
+        if (etalase) { pendingEtalase.clear(); navigate(`/display/${etalase.pubType}?open=${etalase.itemId}`) }
+        else if (redirect) { pendingRedirect.clear(); navigate(redirect) }
+        else navigate('/home')
+      } else {
+        navigate('/activate')
+      }
     } else {
       setError(data.error || 'Gagal masuk dengan Google. Coba lagi.')
     }
@@ -78,7 +89,15 @@ export default function LoginPage() {
 
     if (ok) {
       session.save(data.tokens.access, data.tokens.refresh, data.user)
-      navigate(data.user.is_profile_complete ? '/home' : '/activate')
+      if (data.user.is_profile_complete) {
+        const etalase = pendingEtalase.get()
+        const redirect = pendingRedirect.get()
+        if (etalase) { pendingEtalase.clear(); navigate(`/display/${etalase.pubType}?open=${etalase.itemId}`) }
+        else if (redirect) { pendingRedirect.clear(); navigate(redirect) }
+        else navigate('/home')
+      } else {
+        navigate('/activate')
+      }
     } else if (status === 403 && data.email_verified === false) {
       if (session.getAccess()) {
         // Tokens from an earlier registration still exist — go straight to activation
@@ -139,17 +158,17 @@ export default function LoginPage() {
 
       {/* Right — login form */}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-16">
-        {/* Back link */}
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-ash hover:text-forest text-sm font-sans
-            transition-colors duration-[240ms] mb-12 w-fit"
-        >
-          <ArrowLeft size={14} />
-          Kembali ke Beranda
-        </Link>
-
         <div className="max-w-sm w-full mx-auto lg:mx-0">
+          {/* Back link */}
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-ash hover:text-forest text-sm font-sans
+              transition-colors duration-[240ms] mb-8 w-fit"
+          >
+            <ArrowLeft size={14} />
+            Kembali ke Beranda
+          </Link>
+
           {/* Header */}
           <div className="mb-8">
             <h1 className="font-serif text-h1 font-semibold text-ink mb-2">

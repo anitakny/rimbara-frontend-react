@@ -36,14 +36,17 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [serverError, setServerError] = useState('')
 
-  // ── Handle Google Callback ──────────────────────────────────────────────
+  // ── Redirect if already authenticated ─────────────────────────────────
   useEffect(() => {
+    if (session.getAccess()) {
+      navigate('/home', { replace: true })
+      return
+    }
+
+    // Handle Google OAuth callback
     const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
-
-    if (code) {
-      handleGoogleCallback(code)
-    }
+    if (code) handleGoogleCallback(code)
   }, [])
 
   const handleGoogleCallback = async (code) => {
