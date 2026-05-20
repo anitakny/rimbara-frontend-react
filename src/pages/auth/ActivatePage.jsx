@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Leaf, CheckCircle, AlertCircle, Mail, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { authApi, profilesApi, session } from '../../lib/api'
+import { authApi, profilesApi, session, pendingEtalase, pendingRedirect } from '../../lib/api'
 
 const ROLES = [
   { value: 'MAHASISWA',   label: 'Mahasiswa',        desc: 'Peserta program akademik'     },
@@ -80,7 +80,11 @@ export default function ActivatePage() {
     if (ok) {
       const updatedUser = { ...user, is_profile_complete: true }
       session.save(session.getAccess(), session.getRefresh(), updatedUser)
-      navigate('/profile', { replace: true })
+      const etalase  = pendingEtalase.get()
+      const redirect = pendingRedirect.get()
+      if (etalase)       { pendingEtalase.clear();  navigate(`/display/${etalase.pubType}?open=${etalase.itemId}`, { replace: true }) }
+      else if (redirect) { pendingRedirect.clear(); navigate(redirect, { replace: true }) }
+      else               { navigate('/profile', { replace: true }) }
     } else if (status === 400 && data.errors) {
       setFieldErrors(data.errors)
     } else {
