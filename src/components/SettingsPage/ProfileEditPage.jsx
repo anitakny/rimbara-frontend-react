@@ -37,7 +37,7 @@ export default function ProfileEditPage() {
   const sessionUser = session.getUser()
   const photoInputRef = useRef(null)
 
-  const [form, setForm]           = useState({ institution: '', role_category: '', bio: '' })
+  const [form, setForm]           = useState({ full_name: '', institution: '', role_category: '', bio: '' })
   const [profileData, setProfileData] = useState(null)
   const [loading, setLoading]     = useState(true)
   const [saving, setSaving]       = useState(false)
@@ -54,6 +54,7 @@ export default function ProfileEditPage() {
       if (ok) {
         setProfileData(data)
         setForm({
+          full_name:     data.full_name     || '',
           institution:   data.institution   || '',
           role_category: data.role_category || '',
           bio:           data.bio           || '',
@@ -94,13 +95,24 @@ export default function ProfileEditPage() {
   // ── Profile save ─────────────────────────────────────────────────────────
   const handleSave = async () => {
     setSaving(true); setSaved(false); setFieldErrors({}); setServerError('')
-    const { ok, status, data } = await profilesApi.update({
+    const payload = {
       institution:   form.institution,
       role_category: form.role_category,
       bio:           form.bio,
-    })
+    }
+    if (form.full_name.trim()) payload.full_name = form.full_name.trim()
+
+    const { ok, status, data } = await profilesApi.update(payload)
     if (ok) {
-      setProfileData(data.profile)
+      setProfileData(prev => ({ ...prev, ...data.profile }))
+      // Sync updated name into session so Navbar picks it up immediately
+      if (form.full_name.trim()) {
+        const user = session.getUser()
+        session.save(session.getAccess(), session.getRefresh(), {
+          ...user,
+          full_name: form.full_name.trim(),
+        })
+      }
       setSaved(true)
     } else if (status === 400 && data.errors) {
       setFieldErrors(data.errors)
@@ -111,8 +123,7 @@ export default function ProfileEditPage() {
   }
 
   const charsLeft = BIO_MAX - form.bio.length
-  const initials  = getInitials(profileData?.full_name ?? sessionUser?.full_name)
-  const fullName  = profileData?.full_name ?? sessionUser?.full_name ?? ''
+  const initials  = getInitials(form.full_name || profileData?.full_name || sessionUser?.full_name)
   const email     = sessionUser?.email ?? ''
 
   return (
@@ -137,7 +148,7 @@ export default function ProfileEditPage() {
               {/* Preview */}
               <div className="relative flex-shrink-0">
                 {profileData?.photo_url ? (
-                  <img src={profileData.photo_url} alt={fullName}
+                  <img src={profileData.photo_url} alt={profileData?.full_name ?? ''}
                     className="w-16 h-16 rounded-full object-cover" />
                 ) : (
                   <div className="w-16 h-16 rounded-full bg-forest flex items-center justify-center">
@@ -182,10 +193,20 @@ export default function ProfileEditPage() {
             </div>
           </FormRow>
 
-          {/* Name — read-only */}
-          <FormRow label="Nama Lengkap" hint="Untuk mengubah nama, hubungi tim RIMBAHARI.">
-            <input type="text" value={fullName} readOnly
-              className="w-full bg-sand/20 border border-sand rounded-lg px-4 py-2.5 font-sans text-sm text-ash outline-none cursor-not-allowed" />
+          {/* Name — editable via ProfileUpdateSerializer which saves to User.full_name */}
+          <FormRow label="Nama Lengkap" error={fieldErrors.full_name?.[0]}>
+            <input
+              type="text"
+              value={form.full_name}
+              onChange={(e) => update('full_name', e.target.value)}
+              placeholder="Nama lengkap Anda"
+              className={`w-full bg-white border rounded-lg px-4 py-2.5 font-sans text-sm text-ink
+                placeholder:text-ash/50 outline-none focus:ring-2 transition-all duration-[240ms] ${
+                  fieldErrors.full_name
+                    ? 'border-clay focus:border-clay focus:ring-clay/15'
+                    : 'border-sand focus:border-forest focus:ring-forest/15'
+                }`}
+            />
           </FormRow>
 
           {/* Email — read-only */}

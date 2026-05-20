@@ -44,12 +44,6 @@ export default function ProfilePublicationCard({ article, onClick }) {
           {article.title}
         </h3>
 
-        {article.abstract && (
-          <p className="font-accent italic text-caption text-ash/80 leading-relaxed line-clamp-2 mb-3">
-            {article.abstract}
-          </p>
-        )}
-
         <div className="mt-auto pt-3 border-t border-sand flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1 font-sans text-caption text-ash">
