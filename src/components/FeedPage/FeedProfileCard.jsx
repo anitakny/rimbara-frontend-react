@@ -29,17 +29,25 @@ export default function FeedProfileCard() {
   const isReviewer       = user?.role === 'ADMIN' || user?.role === 'REVIEWER' || user?.is_staff || user?.is_superuser
   const isEtalaseManager = user?.role === 'ADMIN' || user?.role === 'MODERATOR' || user?.is_staff || user?.is_superuser
 
-  // Fetch fresh photo_url on mount; sync into session for Navbar + other components
-  const [photoUrl, setPhotoUrl] = useState(user?.photo_url ?? null)
+  // Fetch fresh profile on mount; sync photo + role_category into session
+  const [photoUrl, setPhotoUrl]       = useState(user?.photo_url ?? null)
+  const [roleCategory, setRoleCategory] = useState(user?.role_category ?? user?.role ?? null)
 
   useEffect(() => {
     profilesApi.me().then(({ ok, data }) => {
-      if (ok && data.photo_url) {
+      if (!ok) return
+      const u = session.getUser()
+      const patch = {}
+      if (data.photo_url && u?.photo_url !== data.photo_url) {
         setPhotoUrl(data.photo_url)
-        const u = session.getUser()
-        if (u?.photo_url !== data.photo_url) {
-          session.save(session.getAccess(), session.getRefresh(), { ...u, photo_url: data.photo_url })
-        }
+        patch.photo_url = data.photo_url
+      }
+      if (data.role_category && u?.role_category !== data.role_category) {
+        setRoleCategory(data.role_category)
+        patch.role_category = data.role_category
+      }
+      if (Object.keys(patch).length > 0) {
+        session.save(session.getAccess(), session.getRefresh(), { ...u, ...patch })
       }
     }).catch(() => {})
   }, [])
@@ -76,10 +84,10 @@ export default function FeedProfileCard() {
           {user?.full_name ?? '—'}
         </p>
 
-        {/* Role */}
-        {user?.role && (
+        {/* Role — prefer profile.role_category (fresh from API), fall back to user.role from JWT */}
+        {(roleCategory || user?.role) && (
           <p className="font-sans text-caption text-ash leading-snug mt-0.5 mb-4">
-            {roleLabels[user.role] ?? user.role}
+            {roleLabels[roleCategory] ?? roleLabels[user?.role] ?? roleCategory ?? user?.role}
           </p>
         )}
 

@@ -105,13 +105,13 @@ export default function ProfileEditPage() {
     const { ok, status, data } = await profilesApi.update(payload)
     if (ok) {
       setProfileData(prev => ({ ...prev, ...data.profile }))
-      // Sync updated name into session so Navbar picks it up immediately
-      if (form.full_name.trim()) {
-        const user = session.getUser()
-        session.save(session.getAccess(), session.getRefresh(), {
-          ...user,
-          full_name: form.full_name.trim(),
-        })
+      // Sync updated fields into session so FeedProfileCard / Navbar pick them up immediately
+      const user = session.getUser()
+      const patch = {}
+      if (form.full_name.trim()) patch.full_name = form.full_name.trim()
+      if (form.role_category)    patch.role_category = form.role_category
+      if (Object.keys(patch).length > 0) {
+        session.save(session.getAccess(), session.getRefresh(), { ...user, ...patch })
       }
       setSaved(true)
     } else if (status === 400 && data.errors) {
