@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
@@ -8,15 +8,16 @@ import { CATEGORIES, DisplayCard, CardSkeleton, BATIK } from '../../components/D
 import FlipbookViewer from '../../components/FlipbookViewer'
 
 export default function DisplayCategoryPage() {
-  const { pubType } = useParams()
-  const navigate    = useNavigate()
+  const { pubType }              = useParams()
+  const navigate                 = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const category = CATEGORIES.find(c => c.id === pubType)
 
   const [publications, setPublications] = useState([])
   const [loading, setLoading]           = useState(true)
-  const [yearFilter, setYearFilter] = useState('')
-  const [page, setPage]             = useState(1)
+  const [yearFilter, setYearFilter]     = useState('')
+  const [page, setPage]                 = useState(1)
   const [flipItem, setFlipItem]         = useState(null)
   const [flipLoading, setFlipLoading]   = useState(null)
 
@@ -60,6 +61,16 @@ export default function DisplayCategoryPage() {
       setFlipLoading(null)
     }
   }
+
+  // Auto-open item from ?open= param (set by EtalasePreview after auth redirect)
+  useEffect(() => {
+    const itemId = searchParams.get('open')
+    if (!itemId) return
+    setSearchParams({}, { replace: true })   // clean URL immediately
+    etalaseApi.detail(itemId).then(({ ok, data }) => {
+      if (ok) setFlipItem(data)
+    })
+  }, [])
 
   useEffect(() => {
     if (!session.getAccess()) {
